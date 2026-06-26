@@ -9,8 +9,59 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChanceBadge } from '@/components/shared/chance-badge'
 import { ProgramBadge } from '@/components/shared/program-badge'
-import { ExternalLink, MapPin } from 'lucide-react'
+import { ExternalLink, MapPin, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import type { RecommendationResult, AdmissionChance } from '@/types'
+import { cn } from '@/lib/utils'
+
+type SortKey = 'score_difference' | 'latest_cutoff' | 'distance_km'
+type SortDir = 'asc' | 'desc'
+
+const DEFAULT_SORT: Record<SortKey, SortDir> = {
+  score_difference: 'desc',
+  latest_cutoff: 'desc',
+  distance_km: 'asc',
+}
+
+function sortRows(rows: RecommendationResult[], key: SortKey, dir: SortDir) {
+  return [...rows].sort((a, b) => {
+    const av = a[key]
+    const bv = b[key]
+    // nulls always last
+    if (av == null && bv == null) return 0
+    if (av == null) return 1
+    if (bv == null) return -1
+    return dir === 'asc' ? av - bv : bv - av
+  })
+}
+
+interface SortHeaderProps {
+  label: string
+  sortKey: SortKey
+  active: SortKey
+  dir: SortDir
+  align?: 'left' | 'right'
+  onClick: (key: SortKey) => void
+}
+
+function SortHeader({ label, sortKey, active, dir, align = 'right', onClick }: SortHeaderProps) {
+  const isActive = active === sortKey
+  const Icon = isActive ? (dir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown
+  return (
+    <TableHead className={align === 'right' ? 'text-right' : ''}>
+      <button
+        onClick={() => onClick(sortKey)}
+        className={cn(
+          'inline-flex items-center gap-1 hover:text-foreground transition-colors',
+          align === 'right' ? 'ml-auto flex-row-reverse' : '',
+          isActive ? 'text-foreground font-semibold' : 'text-muted-foreground'
+        )}
+      >
+        <Icon className={cn('h-3.5 w-3.5 shrink-0', isActive ? 'opacity-100' : 'opacity-40')} />
+        {label}
+      </button>
+    </TableHead>
+  )
+}
 
 interface Props {
   results: RecommendationResult[]
@@ -19,6 +70,17 @@ interface Props {
 export function RecommendationTable({ results }: Props) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<AdmissionChance | 'ALL'>('ALL')
+  const [sortKey, setSortKey] = useState<SortKey>('score_difference')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir(DEFAULT_SORT[key])
+    }
+  }
 
   const filtered = results.filter((r) => {
     const matchSearch =
@@ -27,6 +89,8 @@ export function RecommendationTable({ results }: Props) {
     const matchFilter = filter === 'ALL' || r.chance === filter
     return matchSearch && matchFilter
   })
+
+  const sorted = sortRows(filtered, sortKey, sortDir)
 
   return (
     <div className="space-y-4">
@@ -49,7 +113,7 @@ export function RecommendationTable({ results }: Props) {
           </SelectContent>
         </Select>
         <span className="text-sm text-muted-foreground self-center">
-          {filtered.length} kết quả
+          {sorted.length} kết quả
         </span>
       </div>
 
@@ -59,15 +123,33 @@ export function RecommendationTable({ results }: Props) {
             <TableRow>
               <TableHead>Trường</TableHead>
               <TableHead>Ban</TableHead>
-              <TableHead className="text-right">Điểm chuẩn {results[0]?.latest_year}</TableHead>
-              <TableHead className="text-right">Chênh lệch</TableHead>
+              <SortHeader
+                label={`Điểm chuẩn ${results[0]?.latest_year ?? ''}`}
+                sortKey="latest_cutoff"
+                active={sortKey}
+                dir={sortDir}
+                onClick={handleSort}
+              />
+              <SortHeader
+                label="Chênh lệch"
+                sortKey="score_difference"
+                active={sortKey}
+                dir={sortDir}
+                onClick={handleSort}
+              />
               <TableHead>Xác suất</TableHead>
-              <TableHead className="text-right">Khoảng cách</TableHead>
+              <SortHeader
+                label="Khoảng cách"
+                sortKey="distance_km"
+                active={sortKey}
+                dir={sortDir}
+                onClick={handleSort}
+              />
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((r) => (
+            {sorted.map((r) => (
               <TableRow key={r.program_id}>
                 <TableCell>
                   <div className="font-medium">{r.school_name}</div>
@@ -105,7 +187,7 @@ export function RecommendationTable({ results }: Props) {
                 </TableCell>
               </TableRow>
             ))}
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   Không tìm thấy kết quả phù hợp.

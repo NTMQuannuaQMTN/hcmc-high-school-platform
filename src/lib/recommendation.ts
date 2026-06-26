@@ -1,4 +1,4 @@
-import type { AdmissionChance, ProgramType, RecommendationResult, ProgramLatestCutoff } from '@/types'
+import type { AdmissionChance, ProgramType, RecommendationResult, ProgramLatestCutoff, StudentInput } from '@/types'
 
 export function getChance(scoreDifference: number): AdmissionChance {
   if (scoreDifference >= 1.5) return 'HIGH'
@@ -16,23 +16,49 @@ export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-function scoreForProgramType(type: ProgramType, entrance: number, specialized?: number, integrated?: number): number {
-  if (type === 'SPECIALIZED' && specialized !== undefined) return specialized
-  if (type === 'INTEGRATED' && integrated !== undefined) return integrated
-  return entrance
+// Returns true when a SPECIALIZED program name matches the student's chosen gifted subject.
+// "Chuyên Anh" must not match programs that contain "đề án" / "5695", and vice-versa.
+function programMatchesSubject(programName: string, subject: string): boolean {
+  const name = programName.toLowerCase()
+  const sub = subject.toLowerCase()
+  if (!name.includes(sub)) return false
+  // If the selected subject doesn't mention "đề án", reject programs that do
+  if (!sub.includes('đề án') && !sub.includes('5695')) {
+    if (name.includes('đề án') || name.includes('5695')) return false
+  }
+  return true
+}
+
+// Total = toan + van + ngoai_ngu  (+ 2× bonus for non-NORMAL programs)
+export function computeTotal(type: ProgramType, input: StudentInput): number {
+  const base = input.score_math + input.score_literature + input.score_english
+  if (type === 'SPECIALIZED' && input.gifted_score !== undefined) {
+    return base + 2 * input.gifted_score
+  }
+  if (type === 'INTEGRATED' && input.integrated_score !== undefined) {
+    return base + 2 * input.integrated_score
+  }
+  return base
 }
 
 export function computeRecommendations(
   programs: ProgramLatestCutoff[],
-  entrance: number,
-  specialized: number | undefined,
-  integrated: number | undefined,
-  homeLat: number | undefined,
-  homeLng: number | undefined
+  input: StudentInput,
 ): RecommendationResult[] {
+  const { lat: homeLat, lng: homeLng } = input
   return programs
+    .filter((p) => {
+      // Exclude SPECIALIZED programs when no subject is chosen, or when the subject doesn't match
+      if (p.program_type === 'SPECIALIZED') {
+        if (!input.gifted_subject) return false
+        return programMatchesSubject(p.program_name, input.gifted_subject)
+      }
+      // Exclude INTEGRATED programs when no integrated score is provided
+      if (p.program_type === 'INTEGRATED' && input.integrated_score === undefined) return false
+      return true
+    })
     .map((p) => {
-      const score = scoreForProgramType(p.program_type, entrance, specialized, integrated)
+      const score = computeTotal(p.program_type, input)
       const diff = score - p.latest_cutoff
       const distance =
         homeLat && homeLng && p.latitude && p.longitude

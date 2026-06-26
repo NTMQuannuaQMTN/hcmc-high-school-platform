@@ -79,9 +79,12 @@ export interface RecommendationResult {
 }
 
 export interface StudentInput {
-  entrance_score: number
-  specialized_score?: number
-  integrated_score?: number
+  score_math: number
+  score_literature: number
+  score_english: number
+  gifted_subject?: string   // which specialized subject (e.g. "Toán") — filters SPECIALIZED programs
+  gifted_score?: number     // môn chuyên score — counts ×2, only applied when gifted_subject matches
+  integrated_score?: number // điểm tích hợp — used for INTEGRATED programs (counts ×2)
   lat?: number
   lng?: number
 }
