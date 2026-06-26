@@ -4,6 +4,7 @@ import { AddSchoolForm } from '@/components/admin/add-school-form'
 import { AddProgramForm } from '@/components/admin/add-program-form'
 import { AddCutoffForm } from '@/components/admin/add-cutoff-form'
 import { CSVImport } from '@/components/admin/csv-import'
+import { BulkSchoolImport } from '@/components/admin/bulk-school-import'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { School, BookOpen, TrendingUp, Upload } from 'lucide-react'
@@ -38,14 +39,23 @@ export default function AdminPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="schools" className="mt-6">
+            <TabsContent value="schools" className="mt-6 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Thêm trường mới</CardTitle>
-                  <CardDescription>Nhập thông tin trường THPT vào hệ thống</CardDescription>
+                  <CardDescription>Nhập thủ công thông tin một trường THPT</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <AddSchoolForm secret={secret} />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Import trường từ CSV</CardTitle>
+                  <CardDescription>Upload file CSV — hệ thống tự lấy tọa độ qua OpenStreetMap cho từng dòng</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <BulkSchoolImport secret={secret} />
                 </CardContent>
               </Card>
             </TabsContent>

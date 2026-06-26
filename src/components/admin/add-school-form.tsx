@@ -1,5 +1,5 @@
 'use client'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, LocateFixed } from 'lucide-react'
 
 const schema = z.object({
   name: z.string().min(1),
@@ -24,9 +24,33 @@ type FormValues = z.infer<typeof schema>
 
 export function AddSchoolForm({ secret }: { secret: string }) {
   const [loading, setLoading] = useState(false)
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const [geocoding, setGeocoding] = useState(false)
+  const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
+
+  const watchedAddress = useWatch({ control, name: 'address' })
+  const watchedDistrict = useWatch({ control, name: 'district' })
+
+  async function geocode() {
+    if (!watchedAddress) { toast.error('Nhập địa chỉ trước'); return }
+    setGeocoding(true)
+    const params = new URLSearchParams({ address: watchedAddress })
+    if (watchedDistrict) params.set('district', watchedDistrict)
+    const res = await fetch(`/api/admin/geocode?${params}`, {
+      headers: { 'x-admin-secret': secret },
+    })
+    setGeocoding(false)
+    if (!res.ok) {
+      const e = await res.json()
+      toast.error(e.error ?? 'Không lấy được tọa độ')
+      return
+    }
+    const { lat, lng, display_name } = await res.json()
+    setValue('latitude', String(lat))
+    setValue('longitude', String(lng))
+    toast.success(`Đã lấy tọa độ: ${display_name.slice(0, 60)}…`)
+  }
 
   async function onSubmit(values: FormValues) {
     setLoading(true)
@@ -66,13 +90,28 @@ export function AddSchoolForm({ secret }: { secret: string }) {
           <Input {...register('district')} placeholder="VD: Quận Bình Thạnh" />
           {errors.district && <p className="text-xs text-destructive">{errors.district.message}</p>}
         </div>
-        <div className="space-y-1.5">
-          <Label>Vĩ độ</Label>
-          <Input type="number" step="any" placeholder="VD: 10.8019" {...register('latitude')} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Kinh độ</Label>
-          <Input type="number" step="any" placeholder="VD: 106.7167" {...register('longitude')} />
+        <div className="space-y-1.5 sm:col-span-2">
+          <div className="flex items-center justify-between">
+            <Label>Tọa độ (vĩ độ / kinh độ)</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={geocode}
+              disabled={geocoding || !watchedAddress}
+              className="h-7 text-xs gap-1.5"
+            >
+              {geocoding
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <LocateFixed className="h-3.5 w-3.5" />}
+              Lấy tọa độ tự động
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input type="number" step="any" placeholder="Vĩ độ (10.xxx)" {...register('latitude')} />
+            <Input type="number" step="any" placeholder="Kinh độ (106.xxx)" {...register('longitude')} />
+          </div>
+          <p className="text-xs text-muted-foreground">Điền địa chỉ + quận rồi nhấn "Lấy tọa độ tự động" — dùng OpenStreetMap, miễn phí.</p>
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <Label>Website</Label>
