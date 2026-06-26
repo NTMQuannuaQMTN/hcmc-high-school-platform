@@ -10,7 +10,7 @@ export default function HomePage() {
       <section className="text-center space-y-7 pt-12 pb-4">
         <div className="inline-flex items-center gap-2 rounded-full border bg-muted px-4 py-1.5 text-sm text-muted-foreground">
           <GraduationCap className="h-4 w-4" />
-          Tuyển sinh THPT công lập TP.HCM 2025
+          Tuyển sinh THPT công lập TP.HCM
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-tight">
