@@ -4,8 +4,9 @@ import Papa from 'papaparse'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { CheckCircle2, XCircle, Loader2, Upload, FileText, Clock } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Upload, FileText, Clock, ClipboardPaste } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CsvRow {
@@ -43,6 +44,18 @@ function stateLabel(state: RowState) {
   return ''
 }
 
+const REQUIRED = ['name', 'address', 'district']
+
+function parseCsvText(text: string): { data: CsvRow[]; error?: string } {
+  const result = Papa.parse<CsvRow>(text.trim(), { header: true, skipEmptyLines: true })
+  const fields = result.meta.fields ?? []
+  const missingCols = REQUIRED.filter((f) => !fields.includes(f))
+  if (missingCols.length > 0) {
+    return { data: [], error: `Thiếu cột: ${missingCols.join(', ')}. Cần có: name, address, district` }
+  }
+  return { data: result.data }
+}
+
 export function BulkSchoolImport({ secret }: { secret: string }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef(false)
@@ -50,6 +63,8 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
   const [current, setCurrent] = useState(0)
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [showPaste, setShowPaste] = useState(false)
 
   function downloadTemplate() {
     const csv = [TEMPLATE_HEADERS.join(','), TEMPLATE_EXAMPLE].join('\n')
@@ -69,8 +84,7 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
       complete: (result) => {
         if (fileRef.current) fileRef.current.value = ''
         const fields = result.meta.fields ?? []
-        const required = ['name', 'address', 'district']
-        const missingCols = required.filter((f) => !fields.includes(f))
+        const missingCols = REQUIRED.filter((f) => !fields.includes(f))
         if (missingCols.length > 0) {
           toast.error(
             `File không đúng định dạng — thiếu cột: ${missingCols.join(', ')}.\nNếu dùng Numbers hoặc Excel, hãy xuất dưới dạng CSV trước.`,
@@ -82,8 +96,17 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
     })
   }
 
+  function handlePasteSubmit() {
+    if (!pasteText.trim()) { toast.error('Chưa nhập nội dung'); return }
+    const { data, error } = parseCsvText(pasteText)
+    if (error) { toast.error(error); return }
+    setPasteText('')
+    setShowPaste(false)
+    startImport(data)
+  }
+
   async function startImport(data: CsvRow[]) {
-    if (!data.length) { toast.error('File CSV rỗng'); return }
+    if (!data.length) { toast.error('Không có dòng nào'); return }
     const missing = data.filter((r) => !r.name || !r.address || !r.district)
     if (missing.length) {
       toast.error(`${missing.length} dòng thiếu name / address / district`)
@@ -171,6 +194,8 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
     setCurrent(0)
     setDone(false)
     setRunning(false)
+    setShowPaste(false)
+    setPasteText('')
   }
 
   const total = rows.length
@@ -195,12 +220,22 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
           disabled={running}
         />
         {!running && (
-          <Button asChild variant="outline" size="sm" disabled={running}>
-            <label htmlFor="bulk-school-upload" className="cursor-pointer">
-              <Upload className="mr-2 h-4 w-4" />
-              Chọn file CSV
-            </label>
-          </Button>
+          <>
+            <Button asChild variant="outline" size="sm">
+              <label htmlFor="bulk-school-upload" className="cursor-pointer">
+                <Upload className="mr-2 h-4 w-4" />
+                Chọn file CSV
+              </label>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPaste((v) => !v)}
+            >
+              <ClipboardPaste className="mr-2 h-4 w-4" />
+              Dán nội dung CSV
+            </Button>
+          </>
         )}
         {running && (
           <Button variant="destructive" size="sm" onClick={cancel}>
@@ -213,6 +248,29 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
           </Button>
         )}
       </div>
+
+      {showPaste && !running && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Dán nội dung CSV vào đây (bao gồm dòng tiêu đề: <span className="font-mono">name,address,district,...</span>)
+          </p>
+          <Textarea
+            rows={8}
+            placeholder={`name,address,district,website,description\n${TEMPLATE_EXAMPLE}`}
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            className="font-mono text-xs"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handlePasteSubmit} disabled={!pasteText.trim()}>
+              Bắt đầu import
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowPaste(false); setPasteText('') }}>
+              Hủy
+            </Button>
+          </div>
+        </div>
+      )}
 
       {total > 0 && (
         <>
@@ -256,7 +314,7 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
         </>
       )}
 
-      {!total && (
+      {!total && !showPaste && (
         <div className="rounded-lg bg-muted p-4 text-xs space-y-1">
           <p className="font-medium">Định dạng CSV:</p>
           <p className="font-mono">{TEMPLATE_HEADERS.join(', ')}</p>

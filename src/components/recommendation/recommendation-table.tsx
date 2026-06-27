@@ -4,7 +4,6 @@ import { useState } from 'react'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChanceBadge } from '@/components/shared/chance-badge'
@@ -15,6 +14,7 @@ import { cn } from '@/lib/utils'
 
 type SortKey = 'score_difference' | 'latest_cutoff' | 'distance_km'
 type SortDir = 'asc' | 'desc'
+type TypeFilter = 'ALL' | 'SPECIALIZED' | 'INTEGRATED' | 'NORMAL'
 
 const DEFAULT_SORT: Record<SortKey, SortDir> = {
   score_difference: 'desc',
@@ -26,7 +26,6 @@ function sortRows(rows: RecommendationResult[], key: SortKey, dir: SortDir) {
   return [...rows].sort((a, b) => {
     const av = a[key]
     const bv = b[key]
-    // nulls always last
     if (av == null && bv == null) return 0
     if (av == null) return 1
     if (bv == null) return -1
@@ -63,13 +62,44 @@ function SortHeader({ label, sortKey, active, dir, align = 'right', onClick }: S
   )
 }
 
+function FilterSelect<T extends string>({
+  label,
+  value,
+  onValueChange,
+  options,
+  width = 'w-36',
+}: {
+  label: string
+  value: T
+  onValueChange: (v: T) => void
+  options: { value: T; label: string }[]
+  width?: string
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+      <Select value={value} onValueChange={onValueChange}>
+        <SelectTrigger className={width}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
 interface Props {
   results: RecommendationResult[]
 }
 
 export function RecommendationTable({ results }: Props) {
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<AdmissionChance | 'ALL'>('ALL')
+  const [chanceFilter, setChanceFilter] = useState<AdmissionChance | 'ALL'>('ALL')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('score_difference')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
@@ -86,33 +116,53 @@ export function RecommendationTable({ results }: Props) {
     const matchSearch =
       r.school_name.toLowerCase().includes(search.toLowerCase()) ||
       r.program_name.toLowerCase().includes(search.toLowerCase())
-    const matchFilter = filter === 'ALL' || r.chance === filter
-    return matchSearch && matchFilter
+    const matchChance = chanceFilter === 'ALL' || r.chance === chanceFilter
+    const matchType =
+      typeFilter === 'ALL' ||
+      (typeFilter === 'SPECIALIZED' && r.program_type === 'SPECIALIZED') ||
+      (typeFilter === 'INTEGRATED' && r.program_type === 'INTEGRATED') ||
+      (typeFilter === 'NORMAL' && r.program_type === 'NORMAL')
+    return matchSearch && matchChance && matchType
   })
 
   const sorted = sortRows(filtered, sortKey, sortDir)
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3">
-        <Input
-          placeholder="Tìm trường hoặc ban..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
+      <div className="flex flex-wrap gap-4 items-end">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground font-medium">Tìm kiếm</span>
+          <Input
+            placeholder="Tên trường hoặc ban..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-56"
+          />
+        </div>
+        <FilterSelect
+          label="Loại ban"
+          value={typeFilter}
+          onValueChange={setTypeFilter}
+          options={[
+            { value: 'ALL', label: 'Tất cả' },
+            { value: 'SPECIALIZED', label: 'Chuyên' },
+            { value: 'INTEGRATED', label: 'Tích hợp' },
+            { value: 'NORMAL', label: 'Thường' },
+          ]}
         />
-        <Select value={filter} onValueChange={(v) => setFilter(v as AdmissionChance | 'ALL')}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Lọc xác suất" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">Tất cả</SelectItem>
-            <SelectItem value="HIGH">Cao</SelectItem>
-            <SelectItem value="MEDIUM">Trung bình</SelectItem>
-            <SelectItem value="LOW">Thấp</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground self-center">
+        <FilterSelect
+          label="Xác suất"
+          value={chanceFilter}
+          onValueChange={setChanceFilter}
+          width="w-40"
+          options={[
+            { value: 'ALL', label: 'Tất cả' },
+            { value: 'HIGH', label: 'Cao' },
+            { value: 'MEDIUM', label: 'Trung bình' },
+            { value: 'LOW', label: 'Thấp' },
+          ]}
+        />
+        <span className="text-sm text-muted-foreground pb-0.5">
           {sorted.length} kết quả
         </span>
       </div>
@@ -124,7 +174,7 @@ export function RecommendationTable({ results }: Props) {
               <TableHead>Trường</TableHead>
               <TableHead>Ban</TableHead>
               <SortHeader
-                label={`Điểm chuẩn ${results[0]?.latest_year ?? ''}`}
+                label="Điểm chuẩn"
                 sortKey="latest_cutoff"
                 active={sortKey}
                 dir={sortDir}
@@ -145,18 +195,25 @@ export function RecommendationTable({ results }: Props) {
                 dir={sortDir}
                 onClick={handleSort}
               />
-              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.map((r) => (
               <TableRow key={r.program_id}>
                 <TableCell>
-                  <div className="font-medium">{r.school_name}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {r.district}
-                  </div>
+                  <Link
+                    href={`/schools/${r.school_id}`}
+                    className="group inline-flex flex-col gap-0.5"
+                  >
+                    <span className="font-medium group-hover:text-primary transition-colors flex items-center gap-1">
+                      {r.school_name}
+                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                    </span>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {r.district}
+                    </span>
+                  </Link>
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
@@ -164,8 +221,9 @@ export function RecommendationTable({ results }: Props) {
                     <ProgramBadge type={r.program_type} />
                   </div>
                 </TableCell>
-                <TableCell className="text-right font-mono font-semibold">
-                  {r.latest_cutoff.toFixed(2)}
+                <TableCell className="text-right">
+                  <div className="text-xs text-muted-foreground">{r.latest_year}</div>
+                  <div className="font-mono font-semibold">{r.latest_cutoff.toFixed(2)}</div>
                 </TableCell>
                 <TableCell className="text-right font-mono">
                   <span className={r.score_difference >= 0 ? 'text-green-600' : 'text-red-600'}>
@@ -178,18 +236,11 @@ export function RecommendationTable({ results }: Props) {
                 <TableCell className="text-right text-sm">
                   {r.distance_km != null ? `${r.distance_km} km` : '—'}
                 </TableCell>
-                <TableCell>
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={`/schools/${r.school_id}`}>
-                      <ExternalLink className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TableCell>
               </TableRow>
             ))}
             {sorted.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   Không tìm thấy kết quả phù hợp.
                 </TableCell>
               </TableRow>
