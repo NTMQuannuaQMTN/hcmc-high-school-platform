@@ -14,7 +14,6 @@ import type { StudentInput } from '@/types'
 
 const GIFTED_SUBJECTS = [
   'Chuyên Anh',
-  'Chuyên Anh (Đề án 5695)',
   'Chuyên Địa',
   'Chuyên Hóa',
   'Chuyên Lý',
