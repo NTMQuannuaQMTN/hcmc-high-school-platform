@@ -43,9 +43,10 @@ export default function RecommendPage() {
           )}
 
           {!mutation.isPending && results === null && (
-            <div className="rounded-xl border border-dashed py-20 text-center text-muted-foreground">
-              <p className="text-base">Nhập điểm bên trái</p>
-              <p className="text-sm mt-1">để xem danh sách trường gợi ý</p>
+            <div className="rounded-xl border border-dashed py-20 text-center text-muted-foreground space-y-2">
+              <p className="text-base font-medium text-foreground">Nhập điểm thi để bắt đầu</p>
+              <p className="text-sm">Điền 3 môn bắt buộc (Toán · Văn · Ngoại ngữ), sau đó nhấn <strong>Tìm trường phù hợp</strong>.</p>
+              <p className="text-xs mt-1">Tùy chọn: thêm điểm môn chuyên để xem trường chuyên, hoặc bật vị trí để sắp xếp theo khoảng cách.</p>
             </div>
           )}
 

@@ -208,7 +208,7 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
                   Tổng điểm dự kiến
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Đại trà (max 30)</span>
+                  <span className="text-muted-foreground">Thường (max 30)</span>
                   <span className="font-mono font-semibold">{formatTotal(baseTotal)}</span>
                 </div>
                 {specializedTotal !== undefined && (

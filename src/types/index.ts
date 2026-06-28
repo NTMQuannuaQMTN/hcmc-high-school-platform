@@ -13,6 +13,7 @@ export interface School {
   website: string | null
   description: string | null
   created_at: string
+  programs?: { type: ProgramType }[]
 }
 
 export interface Program {

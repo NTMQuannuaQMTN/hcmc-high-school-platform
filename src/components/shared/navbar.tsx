@@ -22,8 +22,8 @@ export function Navbar() {
         <div className="flex h-14 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <GraduationCap className="h-5 w-5 text-primary" />
-            <span className="hidden sm:inline text-sm">HCMC High School Navigator</span>
-            <span className="sm:hidden text-sm font-bold">HCMC HSN</span>
+            <span className="hidden sm:inline text-sm">Tư vấn THPT TP.HCM</span>
+            <span className="sm:hidden text-sm font-bold">THPT TP.HCM</span>
           </Link>
 
           {/* Desktop nav */}

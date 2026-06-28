@@ -21,7 +21,7 @@ export const CHANCE_COLORS: Record<AdmissionChance, string> = {
 export const PROGRAM_TYPE_LABELS: Record<ProgramType, string> = {
   SPECIALIZED: 'Chuyên',
   INTEGRATED: 'Tích hợp',
-  NORMAL: 'Đại trà',
+  NORMAL: 'Thường',
 }
 
 

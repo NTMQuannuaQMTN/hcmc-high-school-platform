@@ -10,7 +10,7 @@ export default function HomePage() {
       <section className="text-center space-y-7 pt-12 pb-4">
         <div className="inline-flex items-center gap-2 rounded-full border bg-muted px-4 py-1.5 text-sm text-muted-foreground">
           <GraduationCap className="h-4 w-4" />
-          Tuyển sinh THPT công lập TP.HCM
+          Tư vấn tuyển sinh lớp 10 — TP.HCM
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-tight">
@@ -19,7 +19,7 @@ export default function HomePage() {
         </h1>
 
         <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-          Nhập điểm thi lớp 9, xem ngay danh sách trường công lập phù hợp, xác suất đậu và khoảng cách từ nhà bạn.
+          Nhập điểm thi lớp 9, xem ngay danh sách trường THPT công lập phù hợp cùng xác suất đậu và khoảng cách từ nhà.
         </p>
 
         <div className="flex flex-wrap justify-center gap-3 pt-2">
