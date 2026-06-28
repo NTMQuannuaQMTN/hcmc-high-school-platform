@@ -27,17 +27,33 @@ export function CutoffChart({ programs }: Props) {
     <p className="text-muted-foreground text-sm">Chưa có dữ liệu điểm chuẩn.</p>
   )
 
+  // Extra bottom margin when legend wraps across many programs
+  const legendRows = Math.ceil(programs.length / 3)
+  const bottomMargin = 8 + legendRows * 22
+
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+    <ResponsiveContainer width="100%" height={300 + (legendRows > 2 ? (legendRows - 2) * 22 : 0)}>
+      <LineChart data={data} margin={{ top: 8, right: 24, left: 0, bottom: bottomMargin }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 12 }} />
+        <YAxis domain={['auto', 'auto']} tick={{ fontSize: 12 }} width={42} />
         <Tooltip
-          contentStyle={{ fontSize: 13 }}
+          wrapperStyle={{ zIndex: 50 }}
+          contentStyle={{
+            fontSize: 13,
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: 8,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
+            padding: '8px 12px',
+          }}
           formatter={(val) => (typeof val === 'number' ? val.toFixed(2) : val)}
         />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend
+          wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+          iconType="circle"
+          iconSize={8}
+        />
         {programs.map((p, i) => (
           <Line
             key={p.id}
