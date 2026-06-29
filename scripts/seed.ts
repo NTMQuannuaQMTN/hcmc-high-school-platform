@@ -95,6 +95,16 @@ const SCHOOLS = [
     website: null,
     description: null,
   },
+  {
+    name: 'THPT Chuyên Lê Hồng Phong',
+    type: 'PUBLIC',
+    address: '235 Nguyễn Văn Cừ, Phường 4, Quận 5',
+    district: 'Quận 5',
+    latitude: 10.7639,
+    longitude: 106.6667,
+    website: 'https://lehongphong.edu.vn',
+    description: 'Trường THPT Chuyên hàng đầu TP.HCM, nổi tiếng với chất lượng đào tạo xuất sắc và nhiều học sinh đạt giải quốc gia, quốc tế.',
+  },
 ]
 
 const PROGRAMS: Record<string, { name: string; type: string }[]> = {
@@ -106,6 +116,7 @@ const PROGRAMS: Record<string, { name: string; type: string }[]> = {
   'THPT Nguyễn Thị Minh Khai': [
     { name: 'Ban tự nhiên', type: 'NORMAL' },
     { name: 'Ban xã hội', type: 'NORMAL' },
+    { name: 'Song ngữ Tiếng Pháp', type: 'INTEGRATED' },
   ],
   'THPT Gia Định': [
     { name: 'Ban tự nhiên', type: 'NORMAL' },
@@ -118,6 +129,7 @@ const PROGRAMS: Record<string, { name: string; type: string }[]> = {
     { name: 'Ban tự nhiên', type: 'NORMAL' },
     { name: 'Ban xã hội', type: 'NORMAL' },
     { name: 'Chương trình chuyên Toán', type: 'SPECIALIZED' },
+    { name: 'Song ngữ Tiếng Pháp', type: 'INTEGRATED' },
   ],
   'THPT Bùi Thị Xuân': [
     { name: 'Đại trà', type: 'NORMAL' },
@@ -127,6 +139,10 @@ const PROGRAMS: Record<string, { name: string; type: string }[]> = {
   ],
   'THPT Phú Nhuận': [
     { name: 'Đại trà', type: 'NORMAL' },
+  ],
+  'THPT Chuyên Lê Hồng Phong': [
+    { name: 'Chuyên Pháp', type: 'SPECIALIZED' },
+    { name: 'Song ngữ Tiếng Pháp', type: 'INTEGRATED' },
   ],
 }
 
@@ -142,6 +158,7 @@ const CUTOFFS: Record<string, Record<string, [number, number][]>> = {
   'THPT Nguyễn Thị Minh Khai': {
     'Ban tự nhiên': [[2021, 23.75], [2022, 24.50], [2023, 25.00], [2024, 25.50]],
     'Ban xã hội':   [[2021, 22.00], [2022, 22.50], [2023, 22.50], [2024, 23.25]],
+    'Song ngữ Tiếng Pháp':  [[2021, 38.50], [2022, 36.75], [2023, 38.00], [2024, 39.50]],
   },
   'THPT Gia Định': {
     'Ban tự nhiên': [[2021, 22.50], [2022, 23.00], [2023, 23.75], [2024, 24.50]],
@@ -154,6 +171,7 @@ const CUTOFFS: Record<string, Record<string, [number, number][]>> = {
     'Ban tự nhiên':             [[2021, 24.75], [2022, 25.25], [2023, 25.75], [2024, 26.25]],
     'Ban xã hội':               [[2021, 23.25], [2022, 24.00], [2023, 24.00], [2024, 24.75]],
     'Chương trình chuyên Toán': [[2021, 43.00], [2022, 44.00], [2023, 44.50], [2024, 45.50]],
+    'Song ngữ Tiếng Pháp':     [[2021, 37.50], [2022, 35.50], [2023, 37.25], [2024, 38.75]],
   },
   'THPT Bùi Thị Xuân': {
     'Đại trà': [[2021, 21.00], [2022, 21.75], [2023, 22.25], [2024, 23.00]],
@@ -164,6 +182,10 @@ const CUTOFFS: Record<string, Record<string, [number, number][]>> = {
   'THPT Phú Nhuận': {
     'Đại trà': [[2021, 21.75], [2022, 22.50], [2023, 23.25], [2024, 24.00]],
   },
+  'THPT Chuyên Lê Hồng Phong': {
+    'Chuyên Pháp':          [[2021, 37.00], [2022, 24.25], [2023, 30.50], [2024, 31.00]],
+    'Song ngữ Tiếng Pháp':  [[2021, 40.50], [2022, 38.00], [2023, 39.75], [2024, 41.00]],
+  },
 }
 
 const REVIEWS = [
@@ -172,9 +194,15 @@ const REVIEWS = [
   { school: 'THPT Lê Quý Đôn', source: 'Phụ huynh', content: 'Trường có nhiều hoạt động ngoại khóa, giúp con phát triển toàn diện.' },
   { school: 'THPT Nguyễn Thị Minh Khai', source: 'Google Reviews', content: 'Trường danh tiếng với lịch sử lâu đời. Đội ngũ giáo viên giỏi chuyên môn.' },
   { school: 'THPT Nguyễn Thị Minh Khai', source: 'Học sinh', content: 'Áp lực học khá cao nhưng bù lại kiến thức được dạy rất sâu và bài bản.' },
+  { school: 'THPT Nguyễn Thị Minh Khai', source: 'Học sinh lớp Pháp', content: 'Lớp song ngữ Tiếng Pháp giúp mình có lợi thế ngoại ngữ thứ hai, thầy cô người Pháp dạy rất hay.' },
   { school: 'THPT Marie Curie', source: 'Google Reviews', content: 'Trường nổi tiếng về Toán và Khoa học tự nhiên. Nhiều học sinh đạt giải quốc gia.' },
   { school: 'THPT Marie Curie', source: 'Phụ huynh', content: 'Chương trình chuyên Toán rất chất lượng, con tôi phát triển tư duy logic rõ rệt.' },
+  { school: 'THPT Marie Curie', source: 'Học sinh song ngữ Pháp', content: 'Chương trình song ngữ Pháp tại Marie Curie rất bài bản, được học Toán bằng tiếng Pháp giúp tư duy đa ngôn ngữ.' },
   { school: 'THPT Gia Định', source: 'Google Reviews', content: 'Trường nằm vị trí thuận tiện, giao thông dễ dàng. Thầy cô nhiệt tình.' },
+  { school: 'THPT Chuyên Lê Hồng Phong', source: 'Google Reviews', content: 'Trường chuyên hàng đầu TP.HCM, cơ sở vật chất hiện đại, đội ngũ giáo viên xuất sắc.' },
+  { school: 'THPT Chuyên Lê Hồng Phong', source: 'Học sinh chuyên Pháp', content: 'Lớp chuyên Pháp sĩ số ít, thầy cô quan tâm sát sao. Được tham gia nhiều cuộc thi Pháp ngữ quốc tế như DELF/DALF.' },
+  { school: 'THPT Chuyên Lê Hồng Phong', source: 'Phụ huynh', content: 'Con tôi học chuyên Pháp ở đây 3 năm, tiếng Pháp tiến bộ vượt bậc. Nhiều cơ hội du học Pháp, Bỉ, Canada.' },
+  { school: 'THPT Chuyên Lê Hồng Phong', source: 'Cựu học sinh', content: 'Môi trường học thuật rất tốt, bạn bè đều giỏi và có động lực. Lớp song ngữ Pháp được tiếp cận chương trình giáo dục Pháp song song.' },
 ]
 
 async function seed() {

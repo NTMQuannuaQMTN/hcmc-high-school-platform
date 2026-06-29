@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -96,12 +97,32 @@ interface Props {
   results: RecommendationResult[]
 }
 
+import { getActualDistrict } from '@/lib/utils'
+
 export function RecommendationTable({ results }: Props) {
   const [search, setSearch] = useState('')
   const [chanceFilter, setChanceFilter] = useState<AdmissionChance | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL')
+  const [districtFilter, setDistrictFilter] = useState('ALL')
+  const [wardFilter, setWardFilter] = useState('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('score_difference')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+
+  const actualDistricts = useMemo(() => {
+    return Array.from(new Set(results.map((r) => getActualDistrict(r.district)))).sort()
+  }, [results])
+
+  const availableWards = useMemo(() => {
+    const filteredWards = results
+      .filter((r) => districtFilter === 'ALL' || getActualDistrict(r.district) === districtFilter)
+      .map((r) => r.district)
+    return Array.from(new Set(filteredWards)).sort()
+  }, [results, districtFilter])
+
+  const handleDistrictChange = (value: string) => {
+    setDistrictFilter(value)
+    setWardFilter('ALL')
+  }
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -113,30 +134,38 @@ export function RecommendationTable({ results }: Props) {
   }
 
   const filtered = results.filter((r) => {
+    const actDist = getActualDistrict(r.district)
+    
     const matchSearch =
       r.school_name.toLowerCase().includes(search.toLowerCase()) ||
-      r.program_name.toLowerCase().includes(search.toLowerCase())
+      r.program_name.toLowerCase().includes(search.toLowerCase()) ||
+      r.address.toLowerCase().includes(search.toLowerCase())
+      
     const matchChance = chanceFilter === 'ALL' || r.chance === chanceFilter
     const matchType =
       typeFilter === 'ALL' ||
       (typeFilter === 'SPECIALIZED' && r.program_type === 'SPECIALIZED') ||
       (typeFilter === 'INTEGRATED' && r.program_type === 'INTEGRATED') ||
       (typeFilter === 'NORMAL' && r.program_type === 'NORMAL')
-    return matchSearch && matchChance && matchType
+      
+    const matchDistrict = districtFilter === 'ALL' || actDist === districtFilter
+    const matchWard = wardFilter === 'ALL' || r.district === wardFilter
+    
+    return matchSearch && matchChance && matchType && matchDistrict && matchWard
   })
 
   const sorted = sortRows(filtered, sortKey, sortDir)
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap gap-4 items-end bg-card p-4 rounded-xl border shadow-sm">
+        <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
           <span className="text-xs text-muted-foreground font-medium">Tìm kiếm</span>
           <Input
             placeholder="Tên trường hoặc ban..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-56"
+            className="w-full bg-background"
           />
         </div>
         <FilterSelect
@@ -162,92 +191,118 @@ export function RecommendationTable({ results }: Props) {
             { value: 'LOW', label: 'Thấp' },
           ]}
         />
-        <span className="text-sm text-muted-foreground pb-0.5">
+        <FilterSelect
+          label="Quận / Huyện"
+          value={districtFilter}
+          onValueChange={handleDistrictChange}
+          width="w-44"
+          options={[
+            { value: 'ALL', label: 'Tất cả quận' },
+            ...actualDistricts.map((d) => ({ value: d, label: d })),
+          ]}
+        />
+        <FilterSelect
+          label="Khu vực"
+          value={wardFilter}
+          onValueChange={setWardFilter}
+          width="w-44"
+          options={[
+            { value: 'ALL', label: 'Tất cả khu vực' },
+            ...availableWards.map((w) => ({ value: w, label: w })),
+          ]}
+        />
+        <span className="text-sm font-semibold text-primary pb-2.5 px-2 ml-auto">
           {sorted.length} kết quả
         </span>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Trường</TableHead>
-              <TableHead>Ban</TableHead>
-              <SortHeader
-                label="Điểm chuẩn"
-                sortKey="latest_cutoff"
-                active={sortKey}
-                dir={sortDir}
-                onClick={handleSort}
-              />
-              <SortHeader
-                label="Chênh lệch"
-                sortKey="score_difference"
-                active={sortKey}
-                dir={sortDir}
-                onClick={handleSort}
-              />
-              <TableHead>Xác suất</TableHead>
-              <SortHeader
-                label="Khoảng cách"
-                sortKey="distance_km"
-                active={sortKey}
-                dir={sortDir}
-                onClick={handleSort}
-              />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sorted.map((r) => (
-              <TableRow key={r.program_id}>
-                <TableCell>
-                  <Link
-                    href={`/schools/${r.school_id}`}
-                    className="group inline-flex flex-col gap-0.5"
-                  >
-                    <span className="font-medium group-hover:text-primary transition-colors flex items-center gap-1">
-                      {r.school_name}
-                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
-                    </span>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {r.district}
-                    </span>
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm">{r.program_name}</span>
-                    <ProgramBadge type={r.program_type} />
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="text-xs text-muted-foreground">{r.latest_year}</div>
-                  <div className="font-mono font-semibold">{r.latest_cutoff.toFixed(2)}</div>
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  <span className={r.score_difference >= 0 ? 'text-green-600' : 'text-red-600'}>
-                    {r.score_difference > 0 ? '+' : ''}{r.score_difference.toFixed(2)}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <ChanceBadge chance={r.chance} />
-                </TableCell>
-                <TableCell className="text-right text-sm">
-                  {r.distance_km != null ? `${r.distance_km} km` : '—'}
-                </TableCell>
-              </TableRow>
-            ))}
-            {sorted.length === 0 && (
+      <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-muted/40">
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  Không tìm thấy kết quả phù hợp.
-                </TableCell>
+                <TableHead className="py-3">Trường</TableHead>
+                <TableHead className="py-3">Ban</TableHead>
+                <SortHeader
+                  label="Điểm chuẩn"
+                  sortKey="latest_cutoff"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={handleSort}
+                />
+                <SortHeader
+                  label="Chênh lệch"
+                  sortKey="score_difference"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={handleSort}
+                />
+                <TableHead className="py-3">Xác suất</TableHead>
+                <SortHeader
+                  label="Khoảng cách"
+                  sortKey="distance_km"
+                  active={sortKey}
+                  dir={sortDir}
+                  onClick={handleSort}
+                />
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {sorted.map((r) => (
+                <TableRow key={r.program_id} className="hover:bg-muted/30">
+                  <TableCell className="py-3.5">
+                    <Link
+                      href={`/schools/${r.school_id}`}
+                      className="group inline-flex flex-col gap-0.5"
+                    >
+                      <span className="font-semibold group-hover:text-primary transition-colors flex items-center gap-1">
+                        {r.school_name}
+                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+                      </span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {getActualDistrict(r.district)} ({r.district})
+                      </span>
+                    </Link>
+                  </TableCell>
+                  <TableCell className="py-3.5">
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="text-sm font-medium">{r.program_name}</span>
+                      <ProgramBadge type={r.program_type} />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right py-3.5">
+                    <div className="text-[10px] text-muted-foreground">{r.latest_year}</div>
+                    <div className="font-mono font-bold text-sm">{r.latest_cutoff.toFixed(2)}</div>
+                  </TableCell>
+                  <TableCell className="text-right font-mono py-3.5">
+                    <span className={cn(
+                      "font-bold text-sm",
+                      r.score_difference >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                    )}>
+                      {r.score_difference > 0 ? '+' : ''}{r.score_difference.toFixed(2)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3.5">
+                    <ChanceBadge chance={r.chance} />
+                  </TableCell>
+                  <TableCell className="text-right text-sm font-medium py-3.5">
+                    {r.distance_km != null ? `${r.distance_km} km` : '—'}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {sorted.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12 bg-card/30">
+                    Không tìm thấy kết quả phù hợp với bộ lọc.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )
 }
+
