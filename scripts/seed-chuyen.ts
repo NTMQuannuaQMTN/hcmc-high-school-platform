@@ -76,8 +76,8 @@ const CHUYEN_CUTOFFS: Record<string, Record<string, Record<number, number>>> = {
 
 // ── Tích hợp (INTEGRATED) programs at chuyên schools ──
 const TICHHOP_CUTOFFS: Record<string, Record<number, number>> = {
-  // Lê Hồng Phong Tích hợp — already has some data, add missing years
-  'THPT Chuyên Lê Hồng Phong': { 2022: 37.50, 2023: 38.25, 2024: 38.00 },
+  // Lê Hồng Phong Tích hợp
+  'THPT Chuyên Lê Hồng Phong': { 2022: 34.50, 2023: 34.75 },
   // Trần Đại Nghĩa Tích hợp
   'THPT Chuyên Trần Đại Nghĩa': { 2022: 34.25, 2023: 34.50, 2024: 35.00 },
   // THCS-THPT Trần Đại Nghĩa Tích hợp (separate school)
