@@ -12,70 +12,87 @@ const supabase = createClient(
 async function cleanupData() {
   console.log('🧹 Cleaning up database anomalies...\n')
 
-  // Find the school: THPT Chuyên Trần Đại Nghĩa
-  const { data: schools, error: schoolErr } = await supabase
+  const toDeleteIds: string[] = []
+
+  // 1. Clean up "THPT Chuyên Trần Đại Nghĩa" Chuyên Sử & Chuyên Địa (year < 2024)
+  const { data: schoolsTDN } = await supabase
     .from('schools')
     .select('id, name')
     .eq('name', 'THPT Chuyên Trần Đại Nghĩa')
 
-  if (schoolErr || !schools || schools.length === 0) {
-    console.error('❌ School "THPT Chuyên Trần Đại Nghĩa" not found in database')
-    return
+  if (schoolsTDN && schoolsTDN.length > 0) {
+    const schoolId = schoolsTDN[0].id
+    const { data: progs } = await supabase
+      .from('programs')
+      .select('id, name')
+      .eq('school_id', schoolId)
+      .in('name', ['Chuyên Sử', 'Chuyên Địa'])
+
+    if (progs && progs.length > 0) {
+      const progIds = progs.map(p => p.id)
+      const { data: cutoffs } = await supabase
+        .from('cutoffs')
+        .select('id, year, cutoff_score, programs(name, schools(name))')
+        .in('program_id', progIds)
+        .lt('year', 2024)
+
+      if (cutoffs && cutoffs.length > 0) {
+        console.log(`⚠️  Found ${cutoffs.length} incorrect specialized cutoffs for THPT Chuyên Trần Đại Nghĩa:`)
+        cutoffs.forEach((c: any) => {
+          console.log(`   - ${c.programs?.name} (${c.year}) = ${c.cutoff_score}`)
+          toDeleteIds.push(c.id)
+        })
+      }
+    }
   }
 
-  const schoolId = schools[0].id
-  console.log(`🏫 Found school "THPT Chuyên Trần Đại Nghĩa" with ID: ${schoolId}`)
-
-  // Find the specialized programs: Chuyên Sử and Chuyên Địa under this school
-  const { data: programs, error: progErr } = await supabase
-    .from('programs')
+  // 2. Clean up "THCS-THPT Trần Đại Nghĩa" (year < 2024)
+  const { data: schoolsRegularTDN } = await supabase
+    .from('schools')
     .select('id, name')
-    .eq('school_id', schoolId)
-    .in('name', ['Chuyên Sử', 'Chuyên Địa'])
+    .eq('name', 'THCS-THPT Trần Đại Nghĩa')
 
-  if (progErr || !programs || programs.length === 0) {
-    console.error('❌ Specialized programs "Chuyên Sử" or "Chuyên Địa" not found under school')
+  if (schoolsRegularTDN && schoolsRegularTDN.length > 0) {
+    const schoolId = schoolsRegularTDN[0].id
+    const { data: progs } = await supabase
+      .from('programs')
+      .select('id, name')
+      .eq('school_id', schoolId)
+
+    if (progs && progs.length > 0) {
+      const progIds = progs.map(p => p.id)
+      const { data: cutoffs } = await supabase
+        .from('cutoffs')
+        .select('id, year, cutoff_score, programs(name, schools(name))')
+        .in('program_id', progIds)
+        .lt('year', 2024)
+
+      if (cutoffs && cutoffs.length > 0) {
+        console.log(`⚠️  Found ${cutoffs.length} incorrect cutoffs for THCS-THPT Trần Đại Nghĩa (established 2024):`)
+        cutoffs.forEach((c: any) => {
+          console.log(`   - ${c.programs?.name} (${c.year}) = ${c.cutoff_score}`)
+          toDeleteIds.push(c.id)
+        })
+      }
+    }
+  }
+
+  // Execute deletion if any found
+  if (toDeleteIds.length === 0) {
+    console.log('✨ No anomalies found to delete.')
     return
   }
 
-  console.log(`📚 Found programs:`, programs.map(p => `${p.name} (ID: ${p.id})`).join(', '))
-
-  const programIds = programs.map(p => p.id)
-
-  // Find incorrect cutoffs (year < 2024)
-  const { data: incorrectCutoffs, error: findErr } = await supabase
-    .from('cutoffs')
-    .select('id, program_id, year, cutoff_score')
-    .in('program_id', programIds)
-    .lt('year', 2024)
-
-  if (findErr) {
-    console.error('❌ Error searching for incorrect cutoffs:', findErr.message)
-    return
-  }
-
-  if (!incorrectCutoffs || incorrectCutoffs.length === 0) {
-    console.log('✨ No incorrect cutoff records found for years before 2024.')
-    return
-  }
-
-  console.log(`⚠️  Found ${incorrectCutoffs.length} incorrect cutoff records to delete:`)
-  incorrectCutoffs.forEach(c => {
-    const prog = programs.find(p => p.id === c.program_id)
-    console.log(`   - ${prog?.name} | Year ${c.year} | Score: ${c.cutoff_score} (ID: ${c.id})`)
-  })
-
-  // Delete them!
-  const incorrectIds = incorrectCutoffs.map(c => c.id)
-  const { error: deleteErr } = await supabase
+  console.log(`\n🔥 Deleting ${toDeleteIds.length} cutoff records...`)
+  const { error } = await supabase
     .from('cutoffs')
     .delete()
-    .in('id', incorrectIds)
+    .in('id', toDeleteIds)
 
-  if (deleteErr) {
-    console.error('❌ Failed to delete incorrect cutoffs:', deleteErr.message)
+  if (error) {
+    console.error('❌ Deletion failed:', error.message)
   } else {
-    console.log('\n✅ Successfully deleted all incorrect cutoff records!')
+    console.log('✅ Successfully deleted all targeted incorrect cutoff records!')
   }
 }
 

@@ -81,7 +81,7 @@ const TICHHOP_CUTOFFS: Record<string, Record<number, number>> = {
   // Trần Đại Nghĩa Tích hợp
   'THPT Chuyên Trần Đại Nghĩa': { 2022: 34.25, 2023: 34.50, 2024: 35.00 },
   // THCS-THPT Trần Đại Nghĩa Tích hợp (separate school)
-  'THCS-THPT Trần Đại Nghĩa': { 2022: 34.25, 2023: 34.50, 2024: 35.00 },
+  'THCS-THPT Trần Đại Nghĩa': { 2024: 35.00 },
 }
 
 async function seedChuyen() {
