@@ -2,14 +2,16 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const schoolId = searchParams.get('school_id')
   if (!schoolId) return NextResponse.json({ error: 'Missing school_id' }, { status: 400 })
 
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const supabase = await createClient()
+
   const { data: reviews, error } = await supabase
     .from('reviews')
     .select('content, source')

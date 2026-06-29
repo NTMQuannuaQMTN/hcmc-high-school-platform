@@ -33,8 +33,7 @@ const CUTOFF_DATA: Record<string, Record<number, number>> = {
 
   // ── Quận 3 ──
   'THPT Lê Quý Đôn':             { 2022: 22.25, 2023: 23.25, 2024: 22.50 },
-  'THPT Marie Curie':            { 2022: 18.75, 2023: 20.00, 2024: 19.75 }, // already listed above, skip duplicate
-  'THPT Lê Thánh Tôn':           { 2022: 17.25, 2023: 18.50, 2024: 17.25 },
+  'THPT Marie Curie':            { 2022: 18.75, 2023: 20.00, 2024: 19.75 },
 
   // ── Quận 5 ──
   'THPT Hùng Vương':             { 2022: 17.50, 2023: 19.25, 2024: 18.25 },
@@ -154,7 +153,7 @@ const CUTOFF_DATA: Record<string, Record<number, number>> = {
   'THPT Lê Minh Xuân':           { 2022: 11.75, 2023: 13.25, 2024: 15.00 },
   'THPT Đa Phước':               { 2022: 10.50, 2023: 10.50, 2024: 11.50 },
   'THPT Phong Phú':              { 2022: 10.50, 2023: 11.00, 2024: 12.50 },
-  'THPT Tân Túc':                { 2022: 11.25, 2023: 12.75, 2024: 13.00 }, // already above, skip
+  'THPT Tân Túc':                { 2022: 11.25, 2023: 12.75, 2024: 13.00 },
   'THPT Năng khiếu TDTT Bình Chánh': { 2022: 10.50, 2023: 11.50, 2024: 12.25 },
 
   // ── Cần Giờ ──
