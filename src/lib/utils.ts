@@ -28,7 +28,7 @@ export const PROGRAM_TYPE_LABELS: Record<ProgramType, string> = {
 export const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
 
 export const DISTRICT_MAP: Record<string, string> = {
-  'An Hội Đông': 'Quận 12',
+  'An Hội Đông': 'Quận Gò Vấp',
   'An Khánh': 'Thành phố Thủ Đức',
   'An Lạc': 'Quận Bình Tân',
   'An Nhơn': 'Quận Gò Vấp',
@@ -40,7 +40,7 @@ export const DISTRICT_MAP: Record<string, string> = {
   'Bình Hưng': 'Huyện Bình Chánh',
   'Bình Hưng Hòa': 'Quận Bình Tân',
   'Bình Khánh': 'Huyện Cần Giờ',
-  'Bình Lợi': 'Quận Bình Thạnh',
+  'Bình Lợi': 'Huyện Bình Chánh',
   'Bình Lợi Trung': 'Quận Bình Thạnh',
   'Bình Phú': 'Quận 6',
   'Bình Thới': 'Quận 11',
@@ -107,7 +107,13 @@ export const DISTRICT_MAP: Record<string, string> = {
   'Xóm Chiếu': 'Quận 4',
   'Đông Hưng Thuận': 'Quận 12',
   'Đông Thạnh': 'Huyện Hóc Môn',
-  'Đức Nhuận': 'Quận 5'
+  'Đức Nhuận': 'Quận 5',
+  'Võ Thị Sáu': 'Quận 3',
+  'Thới An': 'Quận 12',
+  'Tân Phú': 'Quận Tân Phú',
+  'Dĩ An': 'Tỉnh Bình Dương',
+  'Phú Mỹ': 'Quận 7',
+  'Phường 15': 'Quận Gò Vấp'
 }
 
 export function getActualDistrict(dbDistrict: string): string {

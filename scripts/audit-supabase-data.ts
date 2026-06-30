@@ -67,7 +67,7 @@ async function auditData() {
   const specializedGroups = new Map<string, Map<string, number[]>>()
 
   programs.forEach(p => {
-    if (p.type === 'regular') return
+    if (p.type === 'NORMAL') return
     const school = schoolMap.get(p.school_id)
     if (!school) return
 
@@ -79,7 +79,7 @@ async function auditData() {
 
   cutoffs.forEach(c => {
     const p = programMap.get(c.program_id)
-    if (!p || p.type === 'regular') return
+    if (!p || p.type === 'NORMAL') return
     const school = schoolMap.get(p.school_id)
     if (!school) return
 
@@ -106,7 +106,7 @@ async function auditData() {
     if (!school) return
 
     const score = c.cutoff_score
-    if (p.type === 'regular') {
+    if (p.type === 'NORMAL') {
       if (score > 30 || score < 5) {
         console.log(`❌ Suspicious Regular Score: ${school.name} / ${p.name} (${c.year}) = ${score}`)
         anomalies++
