@@ -4,6 +4,7 @@ import './globals.css'
 import { Providers } from '@/components/shared/providers'
 import { Navbar } from '@/components/shared/navbar'
 import { Toaster } from '@/components/ui/sonner'
+import { Analytics } from '@vercel/analytics/next'
 
 const inter = Inter({ subsets: ['latin', 'vietnamese'] })
 
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="container mx-auto px-4 py-8 max-w-7xl">{children}</main>
           <Toaster richColors />
         </Providers>
+        <Analytics />
       </body>
     </html>
   )
