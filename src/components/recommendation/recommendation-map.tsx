@@ -219,7 +219,7 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
   }, [hoveredSchoolId, schools, leafletLoaded])
 
   return (
-    <div className="w-full h-full min-h-[300px] lg:min-h-0 rounded-2xl overflow-hidden border shadow-inner relative bg-muted/20">
+    <div className="w-full h-full rounded-2xl overflow-hidden border shadow-inner relative bg-muted/20">
       <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-0" />
       
       {/* Dynamic Overlay labels inside the map container */}

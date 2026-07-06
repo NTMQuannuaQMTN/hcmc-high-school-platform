@@ -574,7 +574,7 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
           </div>
 
           {/* Sticky digital map visualization */}
-          <div className="h-[320px] lg:h-auto lg:min-h-[400px] lg:sticky lg:top-6">
+          <div className="h-[320px] lg:h-[450px] lg:sticky lg:top-6 shrink-0">
             <RecommendationMap home={home} schools={mapSchools} hoveredSchoolId={hoveredSchoolId} />
           </div>
         </div>
