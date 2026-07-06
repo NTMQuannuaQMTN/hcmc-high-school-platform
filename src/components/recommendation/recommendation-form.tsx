@@ -175,17 +175,37 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
     setGeocodeStatus('idle')
     setSuggestions([])
     setShowDropdown(false)
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
         setLocating(false)
         setGeocodeStatus('success')
-        setGeocodedAddress('Vị trí hiện tại của bạn')
+        setGeocodedAddress('Vị trí chính xác từ thiết bị')
       },
-      () => {
+      async () => {
+        // Fallback to IP Geolocation if GPS fails
+        try {
+          const res = await fetch('/api/geocode?ip=true')
+          if (res.ok) {
+            const data = await res.json()
+            if (data && data.length > 0) {
+              const first = data[0]
+              setLocation({ lat: first.lat, lng: first.lng })
+              setGeocodeStatus('success')
+              setGeocodedAddress(first.display_name)
+              setAddress(first.display_name)
+              setLocating(false)
+              return
+            }
+          }
+        } catch (err) {
+          // Ignore and let it error
+        }
         setLocating(false)
         setGeocodeStatus('error')
-      }
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     )
   }
 
@@ -383,7 +403,7 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
                     <li
                       key={index}
                       onClick={() => selectSuggestion(s)}
-                      className="px-3 py-2.5 hover:bg-primary/5 hover:text-primary cursor-pointer transition-all line-clamp-2 text-[11px] leading-normal font-medium"
+                      className="px-3 py-2.5 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all line-clamp-2 text-[11px] leading-normal font-medium"
                     >
                       📍 {s.display_name}
                     </li>

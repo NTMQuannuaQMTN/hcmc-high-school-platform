@@ -14,7 +14,7 @@ async function fetchNominatim(q: string) {
         'User-Agent': 'HCMCHighSchoolNavigatorPublic/1.0 (nguyentruongmanhquan@gmail.com)',
         'Accept-Language': 'vi,en',
       },
-      next: { revalidate: 0 },
+      next: { revalidate: 3600 }, // Cache queries for 1 hour to prevent rate limits
     })
     if (!res.ok) return []
     return await res.json() as Array<{ lat: string; lon: string; display_name: string }>
@@ -26,40 +26,86 @@ async function fetchNominatim(q: string) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const address = searchParams.get('address')
+  const ipGeo = searchParams.get('ip')
+
+  // 1. IP Geolocation request
+  if (ipGeo === 'true') {
+    const lat = req.headers.get('x-vercel-ip-latitude')
+    const lng = req.headers.get('x-vercel-ip-longitude')
+    const city = req.headers.get('x-vercel-ip-city')
+    
+    if (lat && lng) {
+      return NextResponse.json([{
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        display_name: city ? `Vị trí ước tính: ${decodeURIComponent(city)}` : 'Vị trí hiện tại (ước tính từ IP)'
+      }])
+    }
+
+    // Local/Server-side fallback when Vercel headers are missing
+    try {
+      const geoRes = await fetch('https://ipapi.co/json/')
+      if (geoRes.ok) {
+        const geoData = await geoRes.json()
+        if (geoData.latitude && geoData.longitude) {
+          return NextResponse.json([{
+            lat: geoData.latitude,
+            lng: geoData.longitude,
+            display_name: `Vị trí ước tính: ${geoData.city || 'Việt Nam'}`
+          }])
+        }
+      }
+    } catch {
+      // Ignore and proceed
+    }
+
+    return NextResponse.json({ error: 'Could not determine IP location' }, { status: 404 })
+  }
 
   if (!address) {
     return NextResponse.json({ error: 'Address query is required' }, { status: 400 })
   }
 
-  // Build query with city context to improve search accuracy
-  const query = address.toLowerCase().includes('hồ chí minh') || address.toLowerCase().includes('hcm')
-    ? address
-    : `${address}, Thành phố Hồ Chí Minh, Việt Nam`
+  const cleanAddress = address.trim()
+
+  // Build a list of fallback queries to try sequentially
+  const queriesToTry: string[] = []
+
+  // Attempt 1: Full query with HCM/Vietnam context
+  const hasHCMC = cleanAddress.toLowerCase().includes('hồ chí minh') || cleanAddress.toLowerCase().includes('hcm')
+  queriesToTry.push(hasHCMC ? cleanAddress : `${cleanAddress}, Thành phố Hồ Chí Minh, Việt Nam`)
+
+  // Attempt 2: Simplified house number (e.g. 529/12A/3 -> 529)
+  if (cleanAddress.includes('/')) {
+    const simplified = cleanAddress.replace(/(\d+)\/[\w\d\/]+/g, '$1')
+    if (simplified !== cleanAddress) {
+      queriesToTry.push(hasHCMC ? simplified : `${simplified}, Thành phố Hồ Chí Minh, Việt Nam`)
+    }
+  }
+
+  // Attempt 3: Strip house number entirely (e.g. 529/12A Điện Biên Phủ -> Điện Biên Phủ)
+  const streetOnly = cleanAddress.replace(/^(?:số|hẻm|ngõ|ngách|kiệt)?\s*\d+[\/\w\d\-]*\s+/i, '')
+  if (streetOnly !== cleanAddress && streetOnly.trim().length > 3) {
+    queriesToTry.push(hasHCMC ? streetOnly : `${streetOnly}, Thành phố Hồ Chí Minh, Việt Nam`)
+  }
+
+  // Attempt 4: If address has ward/district info (e.g. "Phường Võ Thị Sáu, Quận 3"), try just that
+  const wardDistrictMatch = cleanAddress.match(/(?:phường|quận|huyện|thành phố|thị xã|xã|p\.|q\.|h\.)\s+[^,]+/i)
+  if (wardDistrictMatch) {
+    const fallbackArea = cleanAddress.substring(cleanAddress.indexOf(wardDistrictMatch[0]))
+    if (fallbackArea !== cleanAddress && fallbackArea.trim().length > 3) {
+      queriesToTry.push(hasHCMC ? fallbackArea : `${fallbackArea}, Thành phố Hồ Chí Minh, Việt Nam`)
+    }
+  }
 
   try {
-    let results = await fetchNominatim(query)
+    let results: any[] = []
 
-    // Fallback 1: If query has slashes like "529/12A Điện Biên Phủ" and returns no results,
-    // try to simplify the alley number to the main street number: "529 Điện Biên Phủ"
-    if (results.length === 0 && address.includes('/')) {
-      const simplified = address.replace(/^(\d+)\/[^\s]+/, '$1')
-      if (simplified !== address) {
-        const fallbackQuery = simplified.toLowerCase().includes('hồ chí minh') || simplified.toLowerCase().includes('hcm')
-          ? simplified
-          : `${simplified}, Thành phố Hồ Chí Minh, Việt Nam`
-        results = await fetchNominatim(fallbackQuery)
-      }
-    }
-
-    // Fallback 2: If still no results, strip the address number entirely
-    // e.g. "529 Điện Biên Phủ" -> "Điện Biên Phủ"
-    if (results.length === 0) {
-      const strippedNumber = address.replace(/^\d+[\/\w]*\s+/, '')
-      if (strippedNumber !== address && strippedNumber.trim().length > 3) {
-        const fallbackQuery = strippedNumber.toLowerCase().includes('hồ chí minh') || strippedNumber.toLowerCase().includes('hcm')
-          ? strippedNumber
-          : `${strippedNumber}, Thành phố Hồ Chí Minh, Việt Nam`
-        results = await fetchNominatim(fallbackQuery)
+    // Execute queries in sequence until we get results
+    for (const q of queriesToTry) {
+      results = await fetchNominatim(q)
+      if (results.length > 0) {
+        break
       }
     }
 
@@ -87,6 +133,3 @@ function shortenAddress(addr: string): string {
     .replace(/,\s*(?:Thành\s*phố\s+Thủ\s+Đức|TP\.\s*Thủ\s+Đức|TP\s+Thủ\s+Đức|Thủ\s+Đức)$/i, '')
     .trim()
 }
-
-
-
