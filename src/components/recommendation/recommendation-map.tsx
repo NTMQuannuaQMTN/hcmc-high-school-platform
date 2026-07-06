@@ -172,6 +172,10 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
                 const route = data.routes[0]
                 const coords = route.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]])
                 
+                // Connect the route line directly to the home and school markers to close the road snapping gap
+                coords.unshift([home.lat, home.lng])
+                coords.push([s.lat, s.lng])
+                
                 // Draw precise road route
                 const polyline = L.polyline(coords, {
                   color: color,
