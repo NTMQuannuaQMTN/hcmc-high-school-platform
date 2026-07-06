@@ -1,9 +1,9 @@
 'use client'
 import { useMutation } from '@tanstack/react-query'
-import type { RecommendationResult, StudentInput } from '@/types'
+import type { RecommendationResponse, StudentInput } from '@/types'
 
 export function useRecommendation() {
-  return useMutation<RecommendationResult[], Error, StudentInput>({
+  return useMutation<RecommendationResponse, Error, StudentInput>({
     mutationFn: async (input) => {
       const res = await fetch('/api/recommend', {
         method: 'POST',

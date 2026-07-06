@@ -88,6 +88,18 @@ export interface StudentInput {
   integrated_score?: number // điểm tích hợp — used for INTEGRATED programs (counts ×2)
   lat?: number
   lng?: number
+  target_year?: number       // target year for cutoff, e.g. 2026 or 2027 (predicted)
+  strategy?: 'all' | 'safe' | 'top'
+  generate_wishes?: boolean
+}
+
+export interface RecommendationResponse {
+  results: RecommendationResult[]
+  wishes?: {
+    nv1: RecommendationResult | null
+    nv2: RecommendationResult | null
+    nv3: RecommendationResult | null
+  } | null
 }
 
 export interface AISummary {

@@ -5,10 +5,10 @@ import { RecommendationTable } from '@/components/recommendation/recommendation-
 import { useRecommendation } from '@/hooks/use-recommendation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
-import type { RecommendationResult } from '@/types'
+import type { RecommendationResponse } from '@/types'
 
 export default function RecommendPage() {
-  const [results, setResults] = useState<RecommendationResult[] | null>(null)
+  const [response, setResponse] = useState<RecommendationResponse | null>(null)
   const mutation = useRecommendation()
 
   return (
@@ -23,7 +23,7 @@ export default function RecommendPage() {
       <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
         <div className="lg:sticky lg:top-20">
           <RecommendationForm
-            onSubmit={(input) => mutation.mutate(input, { onSuccess: setResults })}
+            onSubmit={(input) => mutation.mutate(input, { onSuccess: setResponse })}
             isLoading={mutation.isPending}
           />
         </div>
@@ -42,7 +42,7 @@ export default function RecommendPage() {
             </div>
           )}
 
-          {!mutation.isPending && results === null && (
+          {!mutation.isPending && response === null && (
             <div className="rounded-xl border border-dashed py-20 text-center text-muted-foreground space-y-2">
               <p className="text-base font-medium text-foreground">Nhập điểm thi để bắt đầu</p>
               <p className="text-sm">Điền 3 môn bắt buộc (Toán · Văn · Ngoại ngữ), sau đó nhấn <strong>Tìm trường phù hợp</strong>.</p>
@@ -50,8 +50,11 @@ export default function RecommendPage() {
             </div>
           )}
 
-          {!mutation.isPending && results !== null && (
-            <RecommendationTable results={results} />
+          {!mutation.isPending && response !== null && (
+            <RecommendationTable 
+              results={response.results} 
+              wishes={response.wishes}
+            />
           )}
         </div>
       </div>

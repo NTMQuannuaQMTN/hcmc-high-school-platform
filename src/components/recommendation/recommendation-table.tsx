@@ -95,11 +95,16 @@ function FilterSelect<T extends string>({
 
 interface Props {
   results: RecommendationResult[]
+  wishes?: {
+    nv1: RecommendationResult | null
+    nv2: RecommendationResult | null
+    nv3: RecommendationResult | null
+  } | null
 }
 
 import { getActualDistrict } from '@/lib/utils'
 
-export function RecommendationTable({ results }: Props) {
+export function RecommendationTable({ results, wishes }: Props) {
   const [search, setSearch] = useState('')
   const [chanceFilter, setChanceFilter] = useState<AdmissionChance | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL')
@@ -157,7 +162,160 @@ export function RecommendationTable({ results }: Props) {
   const sorted = sortRows(filtered, sortKey, sortDir)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {wishes && (wishes.nv1 || wishes.nv2 || wishes.nv3) && (
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            🎯 Bộ 3 Nguyện vọng khuyên dùng tối ưu
+          </h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* NV1 */}
+            {wishes.nv1 && (
+              <div className="relative overflow-hidden rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
+                <div className="absolute top-0 right-0 px-2 py-0.5 bg-violet-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                  NV1 • ĐỘT PHÁ
+                </div>
+                <div className="space-y-1.5">
+                  <Link href={`/schools/${wishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {wishes.nv1.school_name}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {getActualDistrict(wishes.nv1.district)} ({wishes.nv1.district})
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[11px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
+                      {wishes.nv1.program_name}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end pt-2 border-t border-border/40">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {wishes.nv1.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{wishes.nv1.latest_cutoff.toFixed(2)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                    <span className={cn(
+                      "font-mono font-extrabold text-sm",
+                      wishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                    )}>
+                      {wishes.nv1.score_difference > 0 ? "+" : ""}{wishes.nv1.score_difference.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-1">
+                  <ChanceBadge chance={wishes.nv1.chance} />
+                  {wishes.nv1.distance_km != null && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      📍 {wishes.nv1.distance_km} km
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* NV2 */}
+            {wishes.nv2 && (
+              <div className="relative overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
+                <div className="absolute top-0 right-0 px-2 py-0.5 bg-emerald-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                  NV2 • VỪA TẦM
+                </div>
+                <div className="space-y-1.5">
+                  <Link href={`/schools/${wishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {wishes.nv2.school_name}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {getActualDistrict(wishes.nv2.district)} ({wishes.nv2.district})
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                      {wishes.nv2.program_name}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end pt-2 border-t border-border/40">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {wishes.nv2.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{wishes.nv2.latest_cutoff.toFixed(2)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                    <span className={cn(
+                      "font-mono font-extrabold text-sm",
+                      wishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                    )}>
+                      {wishes.nv2.score_difference > 0 ? "+" : ""}{wishes.nv2.score_difference.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-1">
+                  <ChanceBadge chance={wishes.nv2.chance} />
+                  {wishes.nv2.distance_km != null && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      📍 {wishes.nv2.distance_km} km
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* NV3 */}
+            {wishes.nv3 && (
+              <div className="relative overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
+                <div className="absolute top-0 right-0 px-2 py-0.5 bg-sky-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                  NV3 • AN TOÀN
+                </div>
+                <div className="space-y-1.5">
+                  <Link href={`/schools/${wishes.nv3.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {wishes.nv3.school_name}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {getActualDistrict(wishes.nv3.district)} ({wishes.nv3.district})
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[11px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full">
+                      {wishes.nv3.program_name}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end pt-2 border-t border-border/40">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {wishes.nv3.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{wishes.nv3.latest_cutoff.toFixed(2)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                    <span className={cn(
+                      "font-mono font-extrabold text-sm",
+                      wishes.nv3.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                    )}>
+                      {wishes.nv3.score_difference > 0 ? "+" : ""}{wishes.nv3.score_difference.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-1">
+                  <ChanceBadge chance={wishes.nv3.chance} />
+                  {wishes.nv3.distance_km != null && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      📍 {wishes.nv3.distance_km} km
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-4 items-end bg-card p-4 rounded-xl border shadow-sm">
         <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
           <span className="text-xs text-muted-foreground font-medium">Tìm kiếm</span>

@@ -41,12 +41,140 @@ export function computeTotal(type: ProgramType, input: StudentInput): number {
   return base
 }
 
+// Predicts next year's cutoff score using a weighted YoY trend, rounded to nearest 0.25
+export function predictNextCutoff(
+  history: { year: number; score: number }[],
+  targetYear: number,
+  maxScore: number
+): number {
+  if (history.length === 0) return 0
+  if (history.length === 1) return history[0].score
+
+  // Sort history ascending by year
+  const sorted = [...history].sort((a, b) => a.year - b.year)
+  const latest = sorted[sorted.length - 1]
+
+  if (targetYear <= latest.year) {
+    const found = sorted.find((h) => h.year === targetYear)
+    return found ? found.score : latest.score
+  }
+
+  // Calculate weighted YoY changes
+  let totalDiff = 0
+  let weightSum = 0
+  for (let i = 1; i < sorted.length; i++) {
+    const diff = sorted[i].score - sorted[i - 1].score
+    const weight = i // Weight recent years higher
+    totalDiff += diff * weight
+    weightSum += weight
+  }
+
+  const avgYoYChange = weightSum > 0 ? totalDiff / weightSum : 0
+  const yearsDiff = targetYear - latest.year
+  let predicted = latest.score + avgYoYChange * yearsDiff
+
+  // Clamp to realistic bounds
+  const minBound = maxScore === 30 ? 5 : 10
+  predicted = Math.max(minBound, Math.min(maxScore, predicted))
+
+  // Round to nearest 0.25 (admission scores are multiples of 0.25)
+  return Math.round(predicted * 4) / 4
+}
+
+// Generate 3 optimal, viable desires/wishes (NV1, NV2, NV3)
+export function generateOptimalWishes(
+  results: RecommendationResult[]
+): { nv1: RecommendationResult | null; nv2: RecommendationResult | null; nv3: RecommendationResult | null } | null {
+  if (results.length === 0) return null
+
+  // We should prioritize closer schools when selecting desires
+  // Filter for normal programs first as 3 wishes usually apply to regular admissions,
+  // but if all results are specialized, we fallback to whatever is available.
+  let candidates = results.filter(r => r.program_type === 'NORMAL')
+  if (candidates.length === 0) {
+    candidates = results
+  }
+
+  // NV1: Target / Challenger (chance = MEDIUM or close LOW: score_difference between -1.25 and 1.0)
+  const nv1Candidates = candidates.filter(r => r.score_difference >= -1.25 && r.score_difference <= 1.0)
+  const nv1 = nv1Candidates.length > 0
+    ? nv1Candidates.sort((a, b) => {
+        // Prefer closer distance
+        if (a.distance_km !== null && b.distance_km !== null) {
+          if (Math.abs(a.distance_km - b.distance_km) > 6) {
+            return a.distance_km - b.distance_km
+          }
+        }
+        return b.score_difference - a.score_difference
+      })[0]
+    : candidates[0]
+
+  // NV2: Safer backup (cutoff must be lower than NV1 cutoff by >= 0.75 points, and chance should be MEDIUM/HIGH)
+  const nv2Candidates = candidates.filter(
+    (r) =>
+      r.program_id !== nv1.program_id &&
+      r.latest_cutoff <= nv1.latest_cutoff - 0.75 &&
+      r.score_difference >= 0.5
+  )
+  const nv2 = nv2Candidates.length > 0
+    ? nv2Candidates.sort((a, b) => {
+        if (a.distance_km !== null && b.distance_km !== null) {
+          if (Math.abs(a.distance_km - b.distance_km) > 6) {
+            return a.distance_km - b.distance_km
+          }
+        }
+        return b.score_difference - a.score_difference
+      })[0]
+    : candidates.find((r) => r.program_id !== nv1.program_id && r.latest_cutoff <= nv1.latest_cutoff) || null
+
+  // NV3: Completely safe backup (cutoff must be lower than NV2 by >= 0.75 points, and chance = HIGH)
+  const baseCutoff = nv2 ? nv2.latest_cutoff : nv1.latest_cutoff
+  const nv3Candidates = candidates.filter(
+    (r) =>
+      r.program_id !== nv1.program_id &&
+      (!nv2 || r.program_id !== nv2.program_id) &&
+      r.latest_cutoff <= baseCutoff - 0.75 &&
+      r.score_difference >= 1.5
+  )
+  const nv3 = nv3Candidates.length > 0
+    ? nv3Candidates.sort((a, b) => {
+        if (a.distance_km !== null && b.distance_km !== null) {
+          if (Math.abs(a.distance_km - b.distance_km) > 6) {
+            return a.distance_km - b.distance_km
+          }
+        }
+        return b.score_difference - a.score_difference
+      })[0]
+    : candidates.find(
+        (r) =>
+          r.program_id !== nv1.program_id &&
+          (!nv2 || r.program_id !== nv2.program_id) &&
+          r.latest_cutoff <= baseCutoff
+      ) || null
+
+  return { nv1, nv2, nv3 }
+}
+
 export function computeRecommendations(
   programs: ProgramLatestCutoff[],
   input: StudentInput,
+  allCutoffs?: Array<{ program_id: string; year: number; cutoff_score: number }>
 ): RecommendationResult[] {
   const { lat: homeLat, lng: homeLng } = input
-  return programs
+  const targetYear = input.target_year || 2026
+
+  // Group historical cutoffs by program_id
+  const cutoffsByProgram = new Map<string, { year: number; score: number }[]>()
+  if (allCutoffs) {
+    allCutoffs.forEach((c) => {
+      if (!cutoffsByProgram.has(c.program_id)) {
+        cutoffsByProgram.set(c.program_id, [])
+      }
+      cutoffsByProgram.get(c.program_id)!.push({ year: c.year, score: c.cutoff_score })
+    })
+  }
+
+  const results = programs
     .filter((p) => {
       // Exclude SPECIALIZED programs when no subject is chosen, or when the subject doesn't match
       if (p.program_type === 'SPECIALIZED') {
@@ -58,12 +186,26 @@ export function computeRecommendations(
       return true
     })
     .map((p) => {
+      const maxScore = p.program_type === 'NORMAL' ? 30 : 50
+      let cutoff = p.latest_cutoff
+      let year = p.latest_year
+
+      // Predict next year's cutoff score if requested and history is available
+      if (allCutoffs && targetYear > p.latest_year) {
+        const history = cutoffsByProgram.get(p.program_id) || []
+        if (history.length > 0) {
+          cutoff = predictNextCutoff(history, targetYear, maxScore)
+          year = targetYear
+        }
+      }
+
       const score = computeTotal(p.program_type, input)
-      const diff = score - p.latest_cutoff
+      const diff = score - cutoff
       const distance =
         homeLat && homeLng && p.latitude && p.longitude
           ? Math.round(haversineKm(homeLat, homeLng, p.latitude, p.longitude) * 10) / 10
           : null
+
       return {
         program_id: p.program_id,
         program_name: p.program_name,
@@ -75,12 +217,21 @@ export function computeRecommendations(
         district: p.district,
         latitude: p.latitude,
         longitude: p.longitude,
-        latest_year: p.latest_year,
-        latest_cutoff: p.latest_cutoff,
+        latest_year: year,
+        latest_cutoff: cutoff,
         score_difference: Math.round(diff * 100) / 100,
         chance: getChance(diff),
         distance_km: distance,
       } satisfies RecommendationResult
     })
-    .sort((a, b) => b.score_difference - a.score_difference)
+
+  // Apply strategy filters if requested
+  let filtered = results
+  if (input.strategy === 'safe') {
+    filtered = results.filter((r) => r.score_difference >= -0.5)
+  } else if (input.strategy === 'top') {
+    filtered = results.filter((r) => r.score_difference >= -2.5 && r.score_difference <= 0.5)
+  }
+
+  return filtered.sort((a, b) => b.score_difference - a.score_difference)
 }

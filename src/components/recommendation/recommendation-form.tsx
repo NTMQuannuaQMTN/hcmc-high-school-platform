@@ -38,6 +38,9 @@ const schema = z.object({
   gifted_subject:   z.string().optional(),
   gifted_score:     optionalScore,
   integrated_score: optionalScore,
+  target_year:      z.number(),
+  strategy:         z.enum(['all', 'safe', 'top']),
+  generate_wishes:  z.boolean(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -71,6 +74,11 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
 
   const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      target_year: 2026,
+      strategy: 'all',
+      generate_wishes: true,
+    }
   })
 
   const watched = useWatch({ control })
@@ -234,6 +242,9 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
       integrated_score: parseScore(values.integrated_score),
       lat: currentLoc?.lat,
       lng: currentLoc?.lng,
+      target_year: values.target_year,
+      strategy: values.strategy,
+      generate_wishes: values.generate_wishes,
     })
   }
 
@@ -326,6 +337,55 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
                 className="h-9 flex-1 bg-background"
                 {...register('integrated_score')}
               />
+            </div>
+          </div>
+
+          <Separator className="bg-border/60" />
+
+          {/* Dự đoán & Tuyển sinh */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cấu hình bộ lọc & Dự đoán</p>
+            
+            {/* Năm tuyển sinh */}
+            <div className="flex items-center gap-3">
+              <Label className="w-20 shrink-0 text-sm font-medium">Năm chọn</Label>
+              <Select defaultValue="2026" onValueChange={(v: string) => setValue('target_year', parseInt(v))}>
+                <SelectTrigger className="h-9 flex-1 bg-background">
+                  <SelectValue placeholder="Chọn năm…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2026">Năm 2026 (Thực tế)</SelectItem>
+                  <SelectItem value="2027">Năm 2027 (Dự đoán)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Chiến lược chọn trường */}
+            <div className="flex items-center gap-3">
+              <Label className="w-20 shrink-0 text-sm font-medium">Chiến lược</Label>
+              <Select defaultValue="all" onValueChange={(v: any) => setValue('strategy', v)}>
+                <SelectTrigger className="h-9 flex-1 bg-background">
+                  <SelectValue placeholder="Tất cả trường…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả các trường</SelectItem>
+                  <SelectItem value="safe">Điểm an toàn / Vừa tầm</SelectItem>
+                  <SelectItem value="top">Trường Top / Thử thách</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Gợi ý 3 nguyện vọng checkbox */}
+            <div className="flex items-center gap-2.5 pt-1.5 px-0.5">
+              <input
+                type="checkbox"
+                id="generate_wishes"
+                className="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary cursor-pointer accent-primary"
+                {...register('generate_wishes')}
+              />
+              <Label htmlFor="generate_wishes" className="text-xs font-semibold text-muted-foreground cursor-pointer select-none leading-none">
+                Gợi ý 3 nguyện vọng tối ưu (NV1, 2, 3)
+              </Label>
             </div>
           </div>
 
