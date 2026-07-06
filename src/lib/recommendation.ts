@@ -81,78 +81,134 @@ export function predictNextCutoff(
   return Math.round(predicted * 4) / 4
 }
 
-// Generate 3 optimal, viable desires/wishes (NV1, NV2, NV3)
+// Generate optimal, viable desires/wishes (3 Regular, 2 Specialized/Integrated if qualified)
 export function generateOptimalWishes(
-  results: RecommendationResult[]
-): { nv1: RecommendationResult | null; nv2: RecommendationResult | null; nv3: RecommendationResult | null } | null {
+  results: RecommendationResult[],
+  input: StudentInput
+): {
+  regularWishes: { nv1: RecommendationResult | null; nv2: RecommendationResult | null; nv3: RecommendationResult | null } | null
+  specializedWishes: { nv1: RecommendationResult | null; nv2: RecommendationResult | null } | null
+} | null {
   if (results.length === 0) return null
 
-  // We should prioritize closer schools when selecting desires
-  // Filter for normal programs first as 3 wishes usually apply to regular admissions,
-  // but if all results are specialized, we fallback to whatever is available.
-  let candidates = results.filter(r => r.program_type === 'NORMAL')
-  if (candidates.length === 0) {
-    candidates = results
-  }
+  const prioritizeDistance = input.prioritize_distance === true
 
-  // NV1: Target / Challenger (chance = MEDIUM or close LOW: score_difference between -1.25 and 1.0)
-  const nv1Candidates = candidates.filter(r => r.score_difference >= -1.25 && r.score_difference <= 1.0)
-  const nv1 = nv1Candidates.length > 0
-    ? nv1Candidates.sort((a, b) => {
-        // Prefer closer distance
-        if (a.distance_km !== null && b.distance_km !== null) {
-          if (Math.abs(a.distance_km - b.distance_km) > 6) {
-            return a.distance_km - b.distance_km
-          }
-        }
-        return b.score_difference - a.score_difference
-      })[0]
-    : candidates[0]
+  // Helper to compute suitability score for sorting
+  const getSuitability = (r: RecommendationResult) => {
+    if (prioritizeDistance && r.distance_km !== null) {
+      // Penalize suitability score by 0.25 points for every kilometer of distance
+      return r.latest_cutoff - r.distance_km * 0.25
+    }
+    return r.latest_cutoff
+  };
 
-  // NV2: Safer backup (cutoff must be lower than NV1 cutoff by >= 0.75 points, and chance should be MEDIUM/HIGH)
-  const nv2Candidates = candidates.filter(
-    (r) =>
-      r.program_id !== nv1.program_id &&
-      r.latest_cutoff <= nv1.latest_cutoff - 0.75 &&
-      r.score_difference >= 0.5
-  )
-  const nv2 = nv2Candidates.length > 0
-    ? nv2Candidates.sort((a, b) => {
-        if (a.distance_km !== null && b.distance_km !== null) {
-          if (Math.abs(a.distance_km - b.distance_km) > 6) {
-            return a.distance_km - b.distance_km
-          }
-        }
-        return b.score_difference - a.score_difference
-      })[0]
-    : candidates.find((r) => r.program_id !== nv1.program_id && r.latest_cutoff <= nv1.latest_cutoff) || null
+  // --- 1. REGULAR WISHES (3 NV) ---
+  const regularCandidates = results.filter((r) => r.program_type === 'NORMAL')
+  let regularWishes = null
 
-  // NV3: Completely safe backup (cutoff must be lower than NV2 by >= 0.75 points, and chance = HIGH)
-  const baseCutoff = nv2 ? nv2.latest_cutoff : nv1.latest_cutoff
-  const nv3Candidates = candidates.filter(
-    (r) =>
-      r.program_id !== nv1.program_id &&
-      (!nv2 || r.program_id !== nv2.program_id) &&
-      r.latest_cutoff <= baseCutoff - 0.75 &&
-      r.score_difference >= 1.5
-  )
-  const nv3 = nv3Candidates.length > 0
-    ? nv3Candidates.sort((a, b) => {
-        if (a.distance_km !== null && b.distance_km !== null) {
-          if (Math.abs(a.distance_km - b.distance_km) > 6) {
-            return a.distance_km - b.distance_km
-          }
-        }
-        return b.score_difference - a.score_difference
-      })[0]
-    : candidates.find(
+  if (regularCandidates.length > 0) {
+    // NV1: Target / Challenger (score_difference >= -1.5)
+    let nv1Pool = regularCandidates.filter((r) => r.score_difference >= -1.5)
+    if (nv1Pool.length === 0) nv1Pool = regularCandidates
+
+    const nv1 = [...nv1Pool].sort((a, b) => getSuitability(b) - getSuitability(a))[0] || null
+
+    // NV2: Safer backup (cutoff must be lower than NV1 cutoff by >= 0.75 points, and score_difference >= 0.5)
+    let nv2 = null
+    if (nv1) {
+      let nv2Pool = regularCandidates.filter(
+        (r) =>
+          r.program_id !== nv1.program_id &&
+          r.latest_cutoff <= nv1.latest_cutoff - 0.75 &&
+          r.score_difference >= 0.5
+      )
+      if (nv2Pool.length === 0) {
+        nv2Pool = regularCandidates.filter(
+          (r) => r.program_id !== nv1.program_id && r.latest_cutoff <= nv1.latest_cutoff - 0.5
+        )
+      }
+      if (nv2Pool.length === 0) {
+        nv2Pool = regularCandidates.filter((r) => r.program_id !== nv1.program_id)
+      }
+      nv2 = [...nv2Pool].sort((a, b) => getSuitability(b) - getSuitability(a))[0] || null
+    }
+
+    // NV3: Completely safe backup (cutoff must be lower than NV2 by >= 0.75 points, and score_difference >= 1.5)
+    let nv3 = null
+    if (nv1) {
+      const baseCutoff = nv2 ? nv2.latest_cutoff : nv1.latest_cutoff
+      let nv3Pool = regularCandidates.filter(
         (r) =>
           r.program_id !== nv1.program_id &&
           (!nv2 || r.program_id !== nv2.program_id) &&
-          r.latest_cutoff <= baseCutoff
-      ) || null
+          r.latest_cutoff <= baseCutoff - 0.75 &&
+          r.score_difference >= 1.5
+      )
+      if (nv3Pool.length === 0) {
+        nv3Pool = regularCandidates.filter(
+          (r) =>
+            r.program_id !== nv1.program_id &&
+            (!nv2 || r.program_id !== nv2.program_id) &&
+            r.latest_cutoff <= baseCutoff - 0.5
+        )
+      }
+      if (nv3Pool.length === 0) {
+        nv3Pool = regularCandidates.filter(
+          (r) => r.program_id !== nv1.program_id && (!nv2 || r.program_id !== nv2.program_id)
+        )
+      }
+      nv3 = [...nv3Pool].sort((a, b) => getSuitability(b) - getSuitability(a))[0] || null
+    }
 
-  return { nv1, nv2, nv3 }
+    regularWishes = { nv1, nv2, nv3 }
+  }
+
+  // --- 2. SPECIALIZED WISHES (2 NV) ---
+  // Only recommend specialized/integrated wishes if the student entered gifted details or integrated details
+  const hasGifted = input.gifted_subject !== undefined
+  const hasIntegrated = input.integrated_score !== undefined
+  let specializedWishes = null
+
+  if (hasGifted || hasIntegrated) {
+    const specCandidates = results.filter(
+      (r) => r.program_type === 'SPECIALIZED' || r.program_type === 'INTEGRATED'
+    )
+
+    if (specCandidates.length > 0) {
+      // NV1 Chuyên: Target / Challenger (score_difference >= -1.5)
+      let nv1Pool = specCandidates.filter((r) => r.score_difference >= -1.5)
+      if (nv1Pool.length === 0) nv1Pool = specCandidates
+
+      const nv1 = [...nv1Pool].sort((a, b) => getSuitability(b) - getSuitability(a))[0] || null
+
+      // NV2 Chuyên: Safer backup (cutoff <= NV1 - 0.75, score_difference >= 0.5)
+      let nv2 = null
+      if (nv1) {
+        let nv2Pool = specCandidates.filter(
+          (r) =>
+            r.program_id !== nv1.program_id &&
+            r.latest_cutoff <= nv1.latest_cutoff - 0.75 &&
+            r.score_difference >= 0.5
+        )
+        if (nv2Pool.length === 0) {
+          nv2Pool = specCandidates.filter(
+            (r) => r.program_id !== nv1.program_id && r.latest_cutoff <= nv1.latest_cutoff - 0.5
+          )
+        }
+        if (nv2Pool.length === 0) {
+          nv2Pool = specCandidates.filter((r) => r.program_id !== nv1.program_id)
+        }
+        nv2 = [...nv2Pool].sort((a, b) => getSuitability(b) - getSuitability(a))[0] || null
+      }
+
+      specializedWishes = { nv1, nv2 }
+    }
+  }
+
+  return {
+    regularWishes,
+    specializedWishes,
+  }
 }
 
 export function computeRecommendations(

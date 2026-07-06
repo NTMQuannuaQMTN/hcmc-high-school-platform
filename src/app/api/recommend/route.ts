@@ -49,11 +49,24 @@ export async function POST(req: Request) {
     allCutoffs = data
   }
 
-  const results = computeRecommendations(latestCutoffs, body, allCutoffs)
+  // 1. Get ALL recommendations (without strategy filter first, to find the true best wishes)
+  const unfilteredResults = computeRecommendations(latestCutoffs, { ...body, strategy: 'all' }, allCutoffs)
   
+  // 2. Generate wishes using unfiltered results
+  const wishesResult = generate_wishes ? generateOptimalWishes(unfilteredResults, body) : null
+  
+  // 3. Get filtered results based on selected strategy
+  let results = unfilteredResults
+  if (strategy === 'safe') {
+    results = unfilteredResults.filter((r) => r.score_difference >= -0.5)
+  } else if (strategy === 'top') {
+    results = unfilteredResults.filter((r) => r.score_difference >= -2.5 && r.score_difference <= 0.5)
+  }
+
   const response: RecommendationResponse = {
     results,
-    wishes: generate_wishes ? generateOptimalWishes(results) : null
+    regularWishes: wishesResult ? wishesResult.regularWishes : null,
+    specializedWishes: wishesResult ? wishesResult.specializedWishes : null,
   }
 
   return NextResponse.json(response)

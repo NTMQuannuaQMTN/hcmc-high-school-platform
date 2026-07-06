@@ -95,16 +95,20 @@ function FilterSelect<T extends string>({
 
 interface Props {
   results: RecommendationResult[]
-  wishes?: {
+  regularWishes?: {
     nv1: RecommendationResult | null
     nv2: RecommendationResult | null
     nv3: RecommendationResult | null
+  } | null
+  specializedWishes?: {
+    nv1: RecommendationResult | null
+    nv2: RecommendationResult | null
   } | null
 }
 
 import { getActualDistrict } from '@/lib/utils'
 
-export function RecommendationTable({ results, wishes }: Props) {
+export function RecommendationTable({ results, regularWishes, specializedWishes }: Props) {
   const [search, setSearch] = useState('')
   const [chanceFilter, setChanceFilter] = useState<AdmissionChance | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL')
@@ -163,54 +167,55 @@ export function RecommendationTable({ results, wishes }: Props) {
 
   return (
     <div className="space-y-6">
-      {wishes && (wishes.nv1 || wishes.nv2 || wishes.nv3) && (
+      {/* 1. REGULAR WISHES BOARD */}
+      {regularWishes && (regularWishes.nv1 || regularWishes.nv2 || regularWishes.nv3) && (
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            🎯 Bộ 3 Nguyện vọng khuyên dùng tối ưu
+            🎯 3 Nguyện vọng thường khuyên dùng
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {/* NV1 */}
-            {wishes.nv1 && (
+            {regularWishes.nv1 && (
               <div className="relative overflow-hidden rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
                 <div className="absolute top-0 right-0 px-2 py-0.5 bg-violet-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
                   NV1 • ĐỘT PHÁ
                 </div>
                 <div className="space-y-1.5">
-                  <Link href={`/schools/${wishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {wishes.nv1.school_name}
+                  <Link href={`/schools/${regularWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {regularWishes.nv1.school_name}
                   </Link>
                   <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
                     <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(wishes.nv1.district)} ({wishes.nv1.district})
+                    {getActualDistrict(regularWishes.nv1.district)} ({regularWishes.nv1.district})
                   </p>
                   <div className="flex items-center gap-1.5 pt-1">
                     <span className="text-[11px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
-                      {wishes.nv1.program_name}
+                      {regularWishes.nv1.program_name}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-end pt-2 border-t border-border/40">
                   <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {wishes.nv1.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{wishes.nv1.latest_cutoff.toFixed(2)}</span>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv1.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv1.latest_cutoff.toFixed(2)}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
                     <span className={cn(
                       "font-mono font-extrabold text-sm",
-                      wishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                      regularWishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                     )}>
-                      {wishes.nv1.score_difference > 0 ? "+" : ""}{wishes.nv1.score_difference.toFixed(2)}
+                      {regularWishes.nv1.score_difference > 0 ? "+" : ""}{regularWishes.nv1.score_difference.toFixed(2)}
                     </span>
                   </div>
                 </div>
                 
                 <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={wishes.nv1.chance} />
-                  {wishes.nv1.distance_km != null && (
+                  <ChanceBadge chance={regularWishes.nv1.chance} />
+                  {regularWishes.nv1.distance_km != null && (
                     <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {wishes.nv1.distance_km} km
+                      📍 {regularWishes.nv1.distance_km} km
                     </span>
                   )}
                 </div>
@@ -218,47 +223,47 @@ export function RecommendationTable({ results, wishes }: Props) {
             )}
 
             {/* NV2 */}
-            {wishes.nv2 && (
+            {regularWishes.nv2 && (
               <div className="relative overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
                 <div className="absolute top-0 right-0 px-2 py-0.5 bg-emerald-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
                   NV2 • VỪA TẦM
                 </div>
                 <div className="space-y-1.5">
-                  <Link href={`/schools/${wishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {wishes.nv2.school_name}
+                  <Link href={`/schools/${regularWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {regularWishes.nv2.school_name}
                   </Link>
                   <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
                     <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(wishes.nv2.district)} ({wishes.nv2.district})
+                    {getActualDistrict(regularWishes.nv2.district)} ({regularWishes.nv2.district})
                   </p>
                   <div className="flex items-center gap-1.5 pt-1">
                     <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                      {wishes.nv2.program_name}
+                      {regularWishes.nv2.program_name}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-end pt-2 border-t border-border/40">
                   <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {wishes.nv2.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{wishes.nv2.latest_cutoff.toFixed(2)}</span>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv2.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv2.latest_cutoff.toFixed(2)}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
                     <span className={cn(
                       "font-mono font-extrabold text-sm",
-                      wishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                      regularWishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                     )}>
-                      {wishes.nv2.score_difference > 0 ? "+" : ""}{wishes.nv2.score_difference.toFixed(2)}
+                      {regularWishes.nv2.score_difference > 0 ? "+" : ""}{regularWishes.nv2.score_difference.toFixed(2)}
                     </span>
                   </div>
                 </div>
                 
                 <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={wishes.nv2.chance} />
-                  {wishes.nv2.distance_km != null && (
+                  <ChanceBadge chance={regularWishes.nv2.chance} />
+                  {regularWishes.nv2.distance_km != null && (
                     <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {wishes.nv2.distance_km} km
+                      📍 {regularWishes.nv2.distance_km} km
                     </span>
                   )}
                 </div>
@@ -266,47 +271,155 @@ export function RecommendationTable({ results, wishes }: Props) {
             )}
 
             {/* NV3 */}
-            {wishes.nv3 && (
+            {regularWishes.nv3 && (
               <div className="relative overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
                 <div className="absolute top-0 right-0 px-2 py-0.5 bg-sky-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
                   NV3 • AN TOÀN
                 </div>
                 <div className="space-y-1.5">
-                  <Link href={`/schools/${wishes.nv3.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {wishes.nv3.school_name}
+                  <Link href={`/schools/${regularWishes.nv3.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {regularWishes.nv3.school_name}
                   </Link>
                   <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
                     <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(wishes.nv3.district)} ({wishes.nv3.district})
+                    {getActualDistrict(regularWishes.nv3.district)} ({regularWishes.nv3.district})
                   </p>
                   <div className="flex items-center gap-1.5 pt-1">
                     <span className="text-[11px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full">
-                      {wishes.nv3.program_name}
+                      {regularWishes.nv3.program_name}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-end pt-2 border-t border-border/40">
                   <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {wishes.nv3.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{wishes.nv3.latest_cutoff.toFixed(2)}</span>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv3.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv3.latest_cutoff.toFixed(2)}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
                     <span className={cn(
                       "font-mono font-extrabold text-sm",
-                      wishes.nv3.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                      regularWishes.nv3.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                     )}>
-                      {wishes.nv3.score_difference > 0 ? "+" : ""}{wishes.nv3.score_difference.toFixed(2)}
+                      {regularWishes.nv3.score_difference > 0 ? "+" : ""}{regularWishes.nv3.score_difference.toFixed(2)}
                     </span>
                   </div>
                 </div>
                 
                 <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={wishes.nv3.chance} />
-                  {wishes.nv3.distance_km != null && (
+                  <ChanceBadge chance={regularWishes.nv3.chance} />
+                  {regularWishes.nv3.distance_km != null && (
                     <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {wishes.nv3.distance_km} km
+                      📍 {regularWishes.nv3.distance_km} km
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. SPECIALIZED WISHES BOARD */}
+      {specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2) && (
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            ✨ 2 Nguyện vọng chuyên / tích hợp khuyên dùng
+          </h3>
+          <div className="grid md:grid-cols-2 max-w-4xl gap-4">
+            {/* NV1 Chuyên */}
+            {specializedWishes.nv1 && (
+              <div className="relative overflow-hidden rounded-xl border border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
+                <div className="absolute top-0 right-0 px-2 py-0.5 bg-rose-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                  NV1 CHUYÊN • ĐỘT PHÁ
+                </div>
+                <div className="space-y-1.5">
+                  <Link href={`/schools/${specializedWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {specializedWishes.nv1.school_name}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {getActualDistrict(specializedWishes.nv1.district)} ({specializedWishes.nv1.district})
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full">
+                      {specializedWishes.nv1.program_name}
+                    </span>
+                    <ProgramBadge type={specializedWishes.nv1.program_type} />
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end pt-2 border-t border-border/40">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {specializedWishes.nv1.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{specializedWishes.nv1.latest_cutoff.toFixed(2)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                    <span className={cn(
+                      "font-mono font-extrabold text-sm",
+                      specializedWishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                    )}>
+                      {specializedWishes.nv1.score_difference > 0 ? "+" : ""}{specializedWishes.nv1.score_difference.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-1">
+                  <ChanceBadge chance={specializedWishes.nv1.chance} />
+                  {specializedWishes.nv1.distance_km != null && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      📍 {specializedWishes.nv1.distance_km} km
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* NV2 Chuyên */}
+            {specializedWishes.nv2 && (
+              <div className="relative overflow-hidden rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
+                <div className="absolute top-0 right-0 px-2 py-0.5 bg-pink-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                  NV2 CHUYÊN • AN TOÀN
+                </div>
+                <div className="space-y-1.5">
+                  <Link href={`/schools/${specializedWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                    {specializedWishes.nv2.school_name}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {getActualDistrict(specializedWishes.nv2.district)} ({specializedWishes.nv2.district})
+                  </p>
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[11px] font-semibold bg-pink-500/10 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded-full">
+                      {specializedWishes.nv2.program_name}
+                    </span>
+                    <ProgramBadge type={specializedWishes.nv2.program_type} />
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-end pt-2 border-t border-border/40">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {specializedWishes.nv2.latest_year}</span>
+                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{specializedWishes.nv2.latest_cutoff.toFixed(2)}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                    <span className={cn(
+                      "font-mono font-extrabold text-sm",
+                      specializedWishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                    )}>
+                      {specializedWishes.nv2.score_difference > 0 ? "+" : ""}{specializedWishes.nv2.score_difference.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-1">
+                  <ChanceBadge chance={specializedWishes.nv2.chance} />
+                  {specializedWishes.nv2.distance_km != null && (
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      📍 {specializedWishes.nv2.distance_km} km
                     </span>
                   )}
                 </div>

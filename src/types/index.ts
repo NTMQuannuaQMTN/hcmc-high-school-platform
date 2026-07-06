@@ -91,14 +91,19 @@ export interface StudentInput {
   target_year?: number       // target year for cutoff, e.g. 2026 or 2027 (predicted)
   strategy?: 'all' | 'safe' | 'top'
   generate_wishes?: boolean
+  prioritize_distance?: boolean // prioritize schools close to user's location
 }
 
 export interface RecommendationResponse {
   results: RecommendationResult[]
-  wishes?: {
+  regularWishes?: {
     nv1: RecommendationResult | null
     nv2: RecommendationResult | null
     nv3: RecommendationResult | null
+  } | null
+  specializedWishes?: {
+    nv1: RecommendationResult | null
+    nv2: RecommendationResult | null
   } | null
 }
 

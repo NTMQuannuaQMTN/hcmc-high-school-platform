@@ -41,6 +41,7 @@ const schema = z.object({
   target_year:      z.number(),
   strategy:         z.enum(['all', 'safe', 'top']),
   generate_wishes:  z.boolean(),
+  prioritize_distance: z.boolean(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -78,6 +79,7 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
       target_year: 2026,
       strategy: 'all',
       generate_wishes: true,
+      prioritize_distance: false,
     }
   })
 
@@ -245,6 +247,7 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
       target_year: values.target_year,
       strategy: values.strategy,
       generate_wishes: values.generate_wishes,
+      prioritize_distance: values.prioritize_distance,
     })
   }
 
@@ -384,9 +387,24 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
                 {...register('generate_wishes')}
               />
               <Label htmlFor="generate_wishes" className="text-xs font-semibold text-muted-foreground cursor-pointer select-none leading-none">
-                Gợi ý 3 nguyện vọng tối ưu (NV1, 2, 3)
+                Gợi ý nguyện vọng tối ưu
               </Label>
             </div>
+
+            {/* Ưu tiên khoảng cách checkbox */}
+            {watched.generate_wishes && (
+              <div className="flex items-center gap-2.5 pt-1 px-0.5 pl-6">
+                <input
+                  type="checkbox"
+                  id="prioritize_distance"
+                  className="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary cursor-pointer accent-primary"
+                  {...register('prioritize_distance')}
+                />
+                <Label htmlFor="prioritize_distance" className="text-xs font-medium text-muted-foreground cursor-pointer select-none leading-none">
+                  Xét thêm theo khoảng cách (ưu tiên gần nhà)
+                </Label>
+              </div>
+            )}
           </div>
 
           {/* Live total preview */}

@@ -53,7 +53,8 @@ export default function RecommendPage() {
           {!mutation.isPending && response !== null && (
             <RecommendationTable 
               results={response.results} 
-              wishes={response.wishes}
+              regularWishes={response.regularWishes}
+              specializedWishes={response.specializedWishes}
             />
           )}
         </div>
