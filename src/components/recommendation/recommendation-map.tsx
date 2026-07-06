@@ -163,14 +163,62 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
 
         // 4. Draw route lines connecting Home to Schools
         if (home?.lat && home?.lng) {
-          const polyline = L.polyline([[home.lat, home.lng], [s.lat, s.lng]], {
-            color: color,
-            weight: 2,
-            opacity: 0.65,
-            dashArray: '5, 8',
-          }).addTo(map)
+          const routeUrl = `https://router.project-osrm.org/route/v1/driving/${home.lng},${home.lat};${s.lng},${s.lat}?overview=full&geometries=geojson`
           
-          polylinesRef.current.push(polyline)
+          fetch(routeUrl)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.routes && data.routes.length > 0) {
+                const route = data.routes[0]
+                const coords = route.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]])
+                
+                // Draw precise road route
+                const polyline = L.polyline(coords, {
+                  color: color,
+                  weight: 3.5,
+                  opacity: 0.75,
+                }).addTo(map)
+
+                polylinesRef.current.push(polyline)
+
+                // Update popup to show precise route distance & duration
+                const realDist = Math.round((route.distance / 1000) * 10) / 10
+                const motoTime = Math.round(route.duration / 60)
+                const busTime = Math.round(realDist * 4) + 10
+
+                marker.setPopupContent(`<div class="text-xs p-0.5">
+                  <div class="font-extrabold text-[12px] text-foreground leading-snug">${s.name}</div>
+                  <div class="text-[10px] text-muted-foreground mt-0.5 font-semibold flex items-center gap-1">
+                    <span>Đại diện:</span>
+                    <span class="px-1.5 py-0.5 rounded-full font-bold text-[9px] text-white" style="background-color: ${color}">${s.role}</span>
+                  </div>
+                  <div class="text-[10px] text-muted-foreground mt-1 font-mono">📍 Đường đi: ${realDist} km</div>
+                  <div class="mt-1.5 pt-1 border-t border-border/40 text-[10px] space-y-0.5 text-muted-foreground font-medium">
+                    <div class="flex items-center gap-1">🛵 Xe máy: ~${motoTime} phút</div>
+                    <div class="flex items-center gap-1">🚌 Xe buýt: ~${busTime} phút</div>
+                  </div>
+                </div>`)
+              } else {
+                // Fallback straight dashed line
+                const polyline = L.polyline([[home.lat, home.lng], [s.lat, s.lng]], {
+                  color: color,
+                  weight: 2,
+                  opacity: 0.6,
+                  dashArray: '5, 8',
+                }).addTo(map)
+                polylinesRef.current.push(polyline)
+              }
+            })
+            .catch(() => {
+              // Fallback straight dashed line
+              const polyline = L.polyline([[home.lat, home.lng], [s.lat, s.lng]], {
+                color: color,
+                weight: 2,
+                opacity: 0.6,
+                dashArray: '5, 8',
+              }).addTo(map)
+              polylinesRef.current.push(polyline)
+            })
         }
       })
 

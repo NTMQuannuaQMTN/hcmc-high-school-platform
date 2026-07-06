@@ -103,7 +103,14 @@ export function generateOptimalWishes(
   };
 
   // --- 1. REGULAR WISHES (3 NV) ---
-  const regularCandidates = results.filter((r) => r.program_type === 'NORMAL')
+  const hasLocation = input.lat !== undefined && input.lng !== undefined
+  let regularCandidates = results.filter((r) => r.program_type === 'NORMAL')
+  if (hasLocation) {
+    const withinLimit = regularCandidates.filter((r) => r.distance_km !== null && r.distance_km <= 12)
+    if (withinLimit.length > 0) {
+      regularCandidates = withinLimit
+    }
+  }
   let regularWishes = null
 
   if (regularCandidates.length > 0) {
@@ -170,9 +177,15 @@ export function generateOptimalWishes(
   let specializedWishes = null
 
   if (hasGifted || hasIntegrated) {
-    const specCandidates = results.filter(
+    let specCandidates = results.filter(
       (r) => r.program_type === 'SPECIALIZED' || r.program_type === 'INTEGRATED'
     )
+    if (hasLocation) {
+      const withinLimit = specCandidates.filter((r) => r.distance_km !== null && r.distance_km <= 12)
+      if (withinLimit.length > 0) {
+        specCandidates = withinLimit
+      }
+    }
 
     if (specCandidates.length > 0) {
       // NV1 Chuyên: Target / Challenger (score_difference >= -1.5)
