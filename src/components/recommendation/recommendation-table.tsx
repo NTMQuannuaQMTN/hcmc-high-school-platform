@@ -12,6 +12,7 @@ import { ProgramBadge } from '@/components/shared/program-badge'
 import { ExternalLink, MapPin, ArrowUp, ArrowDown, ArrowUpDown, Target, Sparkles } from 'lucide-react'
 import type { RecommendationResult, AdmissionChance } from '@/types'
 import { cn } from '@/lib/utils'
+import { RecommendationMap } from './recommendation-map'
 
 type SortKey = 'score_difference' | 'latest_cutoff' | 'distance_km'
 type SortDir = 'asc' | 'desc'
@@ -104,11 +105,12 @@ interface Props {
     nv1: RecommendationResult | null
     nv2: RecommendationResult | null
   } | null
+  home?: { lat: number; lng: number } | null
 }
 
 import { getActualDistrict } from '@/lib/utils'
 
-export function RecommendationTable({ results, regularWishes, specializedWishes }: Props) {
+export function RecommendationTable({ results, regularWishes, specializedWishes, home }: Props) {
   const [search, setSearch] = useState('')
   const [chanceFilter, setChanceFilter] = useState<AdmissionChance | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL')
@@ -116,6 +118,71 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
   const [wardFilter, setWardFilter] = useState('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('score_difference')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [hoveredSchoolId, setHoveredSchoolId] = useState<string | null>(null)
+
+  const mapSchools = useMemo(() => {
+    const list = []
+    if (regularWishes) {
+      if (regularWishes.nv1?.latitude && regularWishes.nv1?.longitude) {
+        list.push({
+          id: regularWishes.nv1.school_id,
+          name: regularWishes.nv1.school_name,
+          lat: regularWishes.nv1.latitude,
+          lng: regularWishes.nv1.longitude,
+          role: 'NV1',
+          color: '#8b5cf6', // Violet
+          distance_km: regularWishes.nv1.distance_km,
+        })
+      }
+      if (regularWishes.nv2?.latitude && regularWishes.nv2?.longitude) {
+        list.push({
+          id: regularWishes.nv2.school_id,
+          name: regularWishes.nv2.school_name,
+          lat: regularWishes.nv2.latitude,
+          lng: regularWishes.nv2.longitude,
+          role: 'NV2',
+          color: '#10b981', // Emerald
+          distance_km: regularWishes.nv2.distance_km,
+        })
+      }
+      if (regularWishes.nv3?.latitude && regularWishes.nv3?.longitude) {
+        list.push({
+          id: regularWishes.nv3.school_id,
+          name: regularWishes.nv3.school_name,
+          lat: regularWishes.nv3.latitude,
+          lng: regularWishes.nv3.longitude,
+          role: 'NV3',
+          color: '#0ea5e9', // Sky
+          distance_km: regularWishes.nv3.distance_km,
+        })
+      }
+    }
+    if (specializedWishes) {
+      if (specializedWishes.nv1?.latitude && specializedWishes.nv1?.longitude) {
+        list.push({
+          id: specializedWishes.nv1.school_id,
+          name: specializedWishes.nv1.school_name,
+          lat: specializedWishes.nv1.latitude,
+          lng: specializedWishes.nv1.longitude,
+          role: 'NV1 C',
+          color: '#f43f5e', // Rose
+          distance_km: specializedWishes.nv1.distance_km,
+        })
+      }
+      if (specializedWishes.nv2?.latitude && specializedWishes.nv2?.longitude) {
+        list.push({
+          id: specializedWishes.nv2.school_id,
+          name: specializedWishes.nv2.school_name,
+          lat: specializedWishes.nv2.latitude,
+          lng: specializedWishes.nv2.longitude,
+          role: 'NV2 C',
+          color: '#ec4899', // Pink
+          distance_km: specializedWishes.nv2.distance_km,
+        })
+      }
+    }
+    return list
+  }, [regularWishes, specializedWishes])
 
   const actualDistricts = useMemo(() => {
     return Array.from(new Set(results.map((r) => getActualDistrict(r.district)))).sort()
@@ -167,271 +234,348 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
 
   return (
     <div className="space-y-6">
-      {/* 1. REGULAR WISHES BOARD */}
-      {regularWishes && (regularWishes.nv1 || regularWishes.nv2 || regularWishes.nv3) && (
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Target className="h-4 w-4 text-violet-500 shrink-0" />
-            3 Nguyện vọng thường khuyên dùng
-          </h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* NV1 */}
-            {regularWishes.nv1 && (
-              <div className="relative overflow-hidden rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
-                <div className="absolute top-0 right-0 px-2 py-0.5 bg-violet-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
-                  NV1 • ĐỘT PHÁ
-                </div>
-                <div className="space-y-1.5">
-                  <Link href={`/schools/${regularWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {regularWishes.nv1.school_name}
-                  </Link>
-                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(regularWishes.nv1.district)} ({regularWishes.nv1.district})
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
-                      {regularWishes.nv1.program_name}
-                    </span>
-                  </div>
-                </div>
+      {((regularWishes && (regularWishes.nv1 || regularWishes.nv2 || regularWishes.nv3)) ||
+        (specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2))) && (
+        <div className="grid lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-6 items-stretch">
+          <div className="space-y-6 flex flex-col justify-start">
+            {/* 1. REGULAR WISHES BOARD */}
+            {regularWishes && (regularWishes.nv1 || regularWishes.nv2 || regularWishes.nv3) && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Target className="h-4 w-4 text-violet-500 shrink-0" />
+                  3 Nguyện vọng thường khuyên dùng
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {/* NV1 */}
+                  {regularWishes.nv1 && (
+                    <div 
+                      onMouseEnter={() => setHoveredSchoolId(regularWishes.nv1?.school_id || null)}
+                      onMouseLeave={() => setHoveredSchoolId(null)}
+                      className="relative overflow-hidden rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between cursor-pointer"
+                    >
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-violet-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                        NV1 • ĐỘT PHÁ
+                      </div>
+                      <div className="space-y-1.5">
+                        <Link href={`/schools/${regularWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                          {regularWishes.nv1.school_name}
+                        </Link>
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {getActualDistrict(regularWishes.nv1.district)} ({regularWishes.nv1.district})
+                        </p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
+                            {regularWishes.nv1.program_name}
+                          </span>
+                        </div>
+                      </div>
 
-                <div className="flex justify-between items-end pt-2 border-t border-border/40">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv1.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv1.latest_cutoff.toFixed(2)}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
-                    <span className={cn(
-                      "font-mono font-extrabold text-sm",
-                      regularWishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                    )}>
-                      {regularWishes.nv1.score_difference > 0 ? "+" : ""}{regularWishes.nv1.score_difference.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={regularWishes.nv1.chance} />
-                  {regularWishes.nv1.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
-                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                      {regularWishes.nv1.distance_km} km
-                    </span>
+                      <div className="space-y-2 border-t border-border/40 pt-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv1.latest_year}</span>
+                            <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv1.latest_cutoff.toFixed(2)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                            <span className={cn(
+                              "font-mono font-extrabold text-sm",
+                              regularWishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                            )}>
+                              {regularWishes.nv1.score_difference > 0 ? "+" : ""}{regularWishes.nv1.score_difference.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-1">
+                          <ChanceBadge chance={regularWishes.nv1.chance} />
+                          {regularWishes.nv1.distance_km != null && (
+                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {regularWishes.nv1.distance_km} km
+                            </span>
+                          )}
+                        </div>
+
+                        {regularWishes.nv1.distance_km != null && (
+                          <div className="text-[9px] text-muted-foreground/80 font-medium flex flex-col gap-0.5 pt-1.5 border-t border-border/20">
+                            <div>Xe máy: ~{Math.round(regularWishes.nv1.distance_km * 2.4)} phút</div>
+                            <div>Xe buýt: ~{Math.round(regularWishes.nv1.distance_km * 4) + 10} phút</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NV2 */}
+                  {regularWishes.nv2 && (
+                    <div 
+                      onMouseEnter={() => setHoveredSchoolId(regularWishes.nv2?.school_id || null)}
+                      onMouseLeave={() => setHoveredSchoolId(null)}
+                      className="relative overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between cursor-pointer"
+                    >
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-emerald-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                        NV2 • VỪA TẦM
+                      </div>
+                      <div className="space-y-1.5">
+                        <Link href={`/schools/${regularWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                          {regularWishes.nv2.school_name}
+                        </Link>
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {getActualDistrict(regularWishes.nv2.district)} ({regularWishes.nv2.district})
+                        </p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
+                            {regularWishes.nv2.program_name}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 border-t border-border/40 pt-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv2.latest_year}</span>
+                            <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv2.latest_cutoff.toFixed(2)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                            <span className={cn(
+                              "font-mono font-extrabold text-sm",
+                              regularWishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                            )}>
+                              {regularWishes.nv2.score_difference > 0 ? "+" : ""}{regularWishes.nv2.score_difference.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-1">
+                          <ChanceBadge chance={regularWishes.nv2.chance} />
+                          {regularWishes.nv2.distance_km != null && (
+                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {regularWishes.nv2.distance_km} km
+                            </span>
+                          )}
+                        </div>
+
+                        {regularWishes.nv2.distance_km != null && (
+                          <div className="text-[9px] text-muted-foreground/80 font-medium flex flex-col gap-0.5 pt-1.5 border-t border-border/20">
+                            <div>Xe máy: ~{Math.round(regularWishes.nv2.distance_km * 2.4)} phút</div>
+                            <div>Xe buýt: ~{Math.round(regularWishes.nv2.distance_km * 4) + 10} phút</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NV3 */}
+                  {regularWishes.nv3 && (
+                    <div 
+                      onMouseEnter={() => setHoveredSchoolId(regularWishes.nv3?.school_id || null)}
+                      onMouseLeave={() => setHoveredSchoolId(null)}
+                      className="relative overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between cursor-pointer"
+                    >
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-sky-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                        NV3 • AN TOÀN
+                      </div>
+                      <div className="space-y-1.5">
+                        <Link href={`/schools/${regularWishes.nv3.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                          {regularWishes.nv3.school_name}
+                        </Link>
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {getActualDistrict(regularWishes.nv3.district)} ({regularWishes.nv3.district})
+                        </p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full">
+                            {regularWishes.nv3.program_name}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 border-t border-border/40 pt-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv3.latest_year}</span>
+                            <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv3.latest_cutoff.toFixed(2)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                            <span className={cn(
+                              "font-mono font-extrabold text-sm",
+                              regularWishes.nv3.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                            )}>
+                              {regularWishes.nv3.score_difference > 0 ? "+" : ""}{regularWishes.nv3.score_difference.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-1">
+                          <ChanceBadge chance={regularWishes.nv3.chance} />
+                          {regularWishes.nv3.distance_km != null && (
+                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {regularWishes.nv3.distance_km} km
+                            </span>
+                          )}
+                        </div>
+
+                        {regularWishes.nv3.distance_km != null && (
+                          <div className="text-[9px] text-muted-foreground/80 font-medium flex flex-col gap-0.5 pt-1.5 border-t border-border/20">
+                            <div>Xe máy: ~{Math.round(regularWishes.nv3.distance_km * 2.4)} phút</div>
+                            <div>Xe buýt: ~{Math.round(regularWishes.nv3.distance_km * 4) + 10} phút</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* NV2 */}
-            {regularWishes.nv2 && (
-              <div className="relative overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
-                <div className="absolute top-0 right-0 px-2 py-0.5 bg-emerald-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
-                  NV2 • VỪA TẦM
-                </div>
-                <div className="space-y-1.5">
-                  <Link href={`/schools/${regularWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {regularWishes.nv2.school_name}
-                  </Link>
-                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(regularWishes.nv2.district)} ({regularWishes.nv2.district})
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
-                      {regularWishes.nv2.program_name}
-                    </span>
-                  </div>
-                </div>
+            {/* 2. SPECIALIZED WISHES BOARD */}
+            {specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2) && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-rose-500 shrink-0" />
+                  2 Nguyện vọng chuyên / tích hợp khuyên dùng
+                </h3>
+                <div className="grid md:grid-cols-2 max-w-4xl gap-4">
+                  {/* NV1 Chuyên */}
+                  {specializedWishes.nv1 && (
+                    <div 
+                      onMouseEnter={() => setHoveredSchoolId(specializedWishes.nv1?.school_id || null)}
+                      onMouseLeave={() => setHoveredSchoolId(null)}
+                      className="relative overflow-hidden rounded-xl border border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between cursor-pointer"
+                    >
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-rose-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                        NV1 CHUYÊN • ĐỘT PHÁ
+                      </div>
+                      <div className="space-y-1.5">
+                        <Link href={`/schools/${specializedWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                          {specializedWishes.nv1.school_name}
+                        </Link>
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {getActualDistrict(specializedWishes.nv1.district)} ({specializedWishes.nv1.district})
+                        </p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full">
+                            {specializedWishes.nv1.program_name}
+                          </span>
+                          <ProgramBadge type={specializedWishes.nv1.program_type} />
+                        </div>
+                      </div>
 
-                <div className="flex justify-between items-end pt-2 border-t border-border/40">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv2.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv2.latest_cutoff.toFixed(2)}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
-                    <span className={cn(
-                      "font-mono font-extrabold text-sm",
-                      regularWishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                    )}>
-                      {regularWishes.nv2.score_difference > 0 ? "+" : ""}{regularWishes.nv2.score_difference.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={regularWishes.nv2.chance} />
-                  {regularWishes.nv2.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
-                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                      {regularWishes.nv2.distance_km} km
-                    </span>
+                      <div className="space-y-2 border-t border-border/40 pt-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {specializedWishes.nv1.latest_year}</span>
+                            <span className="font-mono font-extrabold text-base text-foreground leading-none">{specializedWishes.nv1.latest_cutoff.toFixed(2)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                            <span className={cn(
+                              "font-mono font-extrabold text-sm",
+                              specializedWishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                            )}>
+                              {specializedWishes.nv1.score_difference > 0 ? "+" : ""}{specializedWishes.nv1.score_difference.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-1">
+                          <ChanceBadge chance={specializedWishes.nv1.chance} />
+                          {specializedWishes.nv1.distance_km != null && (
+                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {specializedWishes.nv1.distance_km} km
+                            </span>
+                          )}
+                        </div>
+
+                        {specializedWishes.nv1.distance_km != null && (
+                          <div className="text-[9px] text-muted-foreground/80 font-medium flex flex-col gap-0.5 pt-1.5 border-t border-border/20">
+                            <div>Xe máy: ~{Math.round(specializedWishes.nv1.distance_km * 2.4)} phút</div>
+                            <div>Xe buýt: ~{Math.round(specializedWishes.nv1.distance_km * 4) + 10} phút</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
-                </div>
-              </div>
-            )}
 
-            {/* NV3 */}
-            {regularWishes.nv3 && (
-              <div className="relative overflow-hidden rounded-xl border border-sky-500/20 bg-gradient-to-br from-sky-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
-                <div className="absolute top-0 right-0 px-2 py-0.5 bg-sky-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
-                  NV3 • AN TOÀN
-                </div>
-                <div className="space-y-1.5">
-                  <Link href={`/schools/${regularWishes.nv3.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {regularWishes.nv3.school_name}
-                  </Link>
-                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(regularWishes.nv3.district)} ({regularWishes.nv3.district})
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full">
-                      {regularWishes.nv3.program_name}
-                    </span>
-                  </div>
-                </div>
+                  {/* NV2 Chuyên */}
+                  {specializedWishes.nv2 && (
+                    <div 
+                      onMouseEnter={() => setHoveredSchoolId(specializedWishes.nv2?.school_id || null)}
+                      onMouseLeave={() => setHoveredSchoolId(null)}
+                      className="relative overflow-hidden rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between cursor-pointer"
+                    >
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-pink-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                        NV2 CHUYÊN • AN TOÀN
+                      </div>
+                      <div className="space-y-1.5">
+                        <Link href={`/schools/${specializedWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                          {specializedWishes.nv2.school_name}
+                        </Link>
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {getActualDistrict(specializedWishes.nv2.district)} ({specializedWishes.nv2.district})
+                        </p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold bg-pink-500/10 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded-full">
+                            {specializedWishes.nv2.program_name}
+                          </span>
+                          <ProgramBadge type={specializedWishes.nv2.program_type} />
+                        </div>
+                      </div>
 
-                <div className="flex justify-between items-end pt-2 border-t border-border/40">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {regularWishes.nv3.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{regularWishes.nv3.latest_cutoff.toFixed(2)}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
-                    <span className={cn(
-                      "font-mono font-extrabold text-sm",
-                      regularWishes.nv3.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                    )}>
-                      {regularWishes.nv3.score_difference > 0 ? "+" : ""}{regularWishes.nv3.score_difference.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={regularWishes.nv3.chance} />
-                  {regularWishes.nv3.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
-                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                      {regularWishes.nv3.distance_km} km
-                    </span>
+                      <div className="space-y-2 border-t border-border/40 pt-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {specializedWishes.nv2.latest_year}</span>
+                            <span className="font-mono font-extrabold text-base text-foreground leading-none">{specializedWishes.nv2.latest_cutoff.toFixed(2)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                            <span className={cn(
+                              "font-mono font-extrabold text-sm",
+                              specializedWishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                            )}>
+                              {specializedWishes.nv2.score_difference > 0 ? "+" : ""}{specializedWishes.nv2.score_difference.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-1">
+                          <ChanceBadge chance={specializedWishes.nv2.chance} />
+                          {specializedWishes.nv2.distance_km != null && (
+                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                              {specializedWishes.nv2.distance_km} km
+                            </span>
+                          )}
+                        </div>
+
+                        {specializedWishes.nv2.distance_km != null && (
+                          <div className="text-[9px] text-muted-foreground/80 font-medium flex flex-col gap-0.5 pt-1.5 border-t border-border/20">
+                            <div>Xe máy: ~{Math.round(specializedWishes.nv2.distance_km * 2.4)} phút</div>
+                            <div>Xe buýt: ~{Math.round(specializedWishes.nv2.distance_km * 4) + 10} phút</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* 2. SPECIALIZED WISHES BOARD */}
-      {specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2) && (
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles className="h-4 w-4 text-rose-500 shrink-0" />
-            2 Nguyện vọng chuyên / tích hợp khuyên dùng
-          </h3>
-          <div className="grid md:grid-cols-2 max-w-4xl gap-4">
-            {/* NV1 Chuyên */}
-            {specializedWishes.nv1 && (
-              <div className="relative overflow-hidden rounded-xl border border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
-                <div className="absolute top-0 right-0 px-2 py-0.5 bg-rose-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
-                  NV1 CHUYÊN • ĐỘT PHÁ
-                </div>
-                <div className="space-y-1.5">
-                  <Link href={`/schools/${specializedWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {specializedWishes.nv1.school_name}
-                  </Link>
-                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(specializedWishes.nv1.district)} ({specializedWishes.nv1.district})
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full">
-                      {specializedWishes.nv1.program_name}
-                    </span>
-                    <ProgramBadge type={specializedWishes.nv1.program_type} />
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-end pt-2 border-t border-border/40">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {specializedWishes.nv1.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{specializedWishes.nv1.latest_cutoff.toFixed(2)}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
-                    <span className={cn(
-                      "font-mono font-extrabold text-sm",
-                      specializedWishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                    )}>
-                      {specializedWishes.nv1.score_difference > 0 ? "+" : ""}{specializedWishes.nv1.score_difference.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={specializedWishes.nv1.chance} />
-                  {specializedWishes.nv1.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
-                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                      {specializedWishes.nv1.distance_km} km
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* NV2 Chuyên */}
-            {specializedWishes.nv2 && (
-              <div className="relative overflow-hidden rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between">
-                <div className="absolute top-0 right-0 px-2 py-0.5 bg-pink-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
-                  NV2 CHUYÊN • AN TOÀN
-                </div>
-                <div className="space-y-1.5">
-                  <Link href={`/schools/${specializedWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
-                    {specializedWishes.nv2.school_name}
-                  </Link>
-                  <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {getActualDistrict(specializedWishes.nv2.district)} ({specializedWishes.nv2.district})
-                  </p>
-                  <div className="flex items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-semibold bg-pink-500/10 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded-full">
-                      {specializedWishes.nv2.program_name}
-                    </span>
-                    <ProgramBadge type={specializedWishes.nv2.program_type} />
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-end pt-2 border-t border-border/40">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {specializedWishes.nv2.latest_year}</span>
-                    <span className="font-mono font-extrabold text-base text-foreground leading-none">{specializedWishes.nv2.latest_cutoff.toFixed(2)}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
-                    <span className={cn(
-                      "font-mono font-extrabold text-sm",
-                      specializedWishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                    )}>
-                      {specializedWishes.nv2.score_difference > 0 ? "+" : ""}{specializedWishes.nv2.score_difference.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center pt-1">
-                  <ChanceBadge chance={specializedWishes.nv2.chance} />
-                  {specializedWishes.nv2.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
-                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                      {specializedWishes.nv2.distance_km} km
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+          {/* Sticky digital map visualization */}
+          <div className="h-[320px] lg:h-auto lg:min-h-[400px] lg:sticky lg:top-6">
+            <RecommendationMap home={home} schools={mapSchools} hoveredSchoolId={hoveredSchoolId} />
           </div>
         </div>
       )}

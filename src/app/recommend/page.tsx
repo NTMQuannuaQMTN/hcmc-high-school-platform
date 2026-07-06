@@ -9,6 +9,7 @@ import type { RecommendationResponse } from '@/types'
 
 export default function RecommendPage() {
   const [response, setResponse] = useState<RecommendationResponse | null>(null)
+  const [homeCoords, setHomeCoords] = useState<{ lat: number; lng: number } | null>(null)
   const mutation = useRecommendation()
 
   return (
@@ -23,7 +24,10 @@ export default function RecommendPage() {
       <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
         <div className="lg:sticky lg:top-20">
           <RecommendationForm
-            onSubmit={(input) => mutation.mutate(input, { onSuccess: setResponse })}
+            onSubmit={(input) => {
+              setHomeCoords(input.lat && input.lng ? { lat: input.lat, lng: input.lng } : null)
+              mutation.mutate(input, { onSuccess: setResponse })
+            }}
             isLoading={mutation.isPending}
           />
         </div>
@@ -55,6 +59,7 @@ export default function RecommendPage() {
               results={response.results} 
               regularWishes={response.regularWishes}
               specializedWishes={response.specializedWishes}
+              home={homeCoords}
             />
           )}
         </div>
