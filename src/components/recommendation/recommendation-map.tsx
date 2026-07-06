@@ -20,6 +20,7 @@ interface Props {
 export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
+  const [map, setMap] = useState<any>(null)
   const markersRef = useRef<Map<string, any>>(new Map())
   const polylinesRef = useRef<any[]>([])
   const homeMarkerRef = useRef<any>(null)
@@ -64,7 +65,7 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
       const centerLat = home?.lat || 10.762622
       const centerLng = home?.lng || 106.660172
 
-      const map = L.map(mapContainerRef.current!, {
+      const mapInstance = L.map(mapContainerRef.current!, {
         zoomControl: false,
         attributionControl: false,
       }).setView([centerLat, centerLng], 12)
@@ -72,25 +73,26 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
       // Use CartoDB Voyager tiles (looks extremely clean)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
-      }).addTo(map)
+      }).addTo(mapInstance)
 
       // Add zoom control to bottom right
-      L.control.zoom({ position: 'bottomright' }).addTo(map)
+      L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
 
-      mapRef.current = map
+      mapRef.current = mapInstance
+      setMap(mapInstance)
     })
 
     return () => {
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
+        setMap(null)
       }
     }
   }, [leafletLoaded])
 
   // Update map markers, routes, and fits bounds when schools or home changes
   useEffect(() => {
-    const map = mapRef.current
     if (!map) return
 
     import('leaflet').then((L) => {
@@ -182,11 +184,11 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
         })
       }
     })
-  }, [schools, home, leafletLoaded])
+  }, [map, schools, home, leafletLoaded])
 
   // Update hovered pulsing state
   useEffect(() => {
-    if (!leafletLoaded) return
+    if (!map || !leafletLoaded) return
 
     schools.forEach((s) => {
       const marker = markersRef.current.get(s.id)
@@ -203,7 +205,7 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
           element.style.color = color
           
           // Smoothly pan map to this marker
-          mapRef.current?.panTo(marker.getLatLng(), {
+          map.panTo(marker.getLatLng(), {
             animate: true,
             duration: 0.5,
           })
@@ -216,7 +218,7 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
         }
       }
     })
-  }, [hoveredSchoolId, schools, leafletLoaded])
+  }, [map, hoveredSchoolId, schools, leafletLoaded])
 
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden border shadow-inner relative bg-muted/20">
