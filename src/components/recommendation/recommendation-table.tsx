@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChanceBadge } from '@/components/shared/chance-badge'
 import { ProgramBadge } from '@/components/shared/program-badge'
-import { ExternalLink, MapPin, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
+import { ExternalLink, MapPin, ArrowUp, ArrowDown, ArrowUpDown, Target, Sparkles } from 'lucide-react'
 import type { RecommendationResult, AdmissionChance } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -171,7 +171,8 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
       {regularWishes && (regularWishes.nv1 || regularWishes.nv2 || regularWishes.nv3) && (
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            🎯 3 Nguyện vọng thường khuyên dùng
+            <Target className="h-4 w-4 text-violet-500 shrink-0" />
+            3 Nguyện vọng thường khuyên dùng
           </h3>
           <div className="grid md:grid-cols-3 gap-4">
             {/* NV1 */}
@@ -214,8 +215,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
                 <div className="flex justify-between items-center pt-1">
                   <ChanceBadge chance={regularWishes.nv1.chance} />
                   {regularWishes.nv1.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {regularWishes.nv1.distance_km} km
+                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {regularWishes.nv1.distance_km} km
                     </span>
                   )}
                 </div>
@@ -262,8 +264,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
                 <div className="flex justify-between items-center pt-1">
                   <ChanceBadge chance={regularWishes.nv2.chance} />
                   {regularWishes.nv2.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {regularWishes.nv2.distance_km} km
+                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {regularWishes.nv2.distance_km} km
                     </span>
                   )}
                 </div>
@@ -310,8 +313,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
                 <div className="flex justify-between items-center pt-1">
                   <ChanceBadge chance={regularWishes.nv3.chance} />
                   {regularWishes.nv3.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {regularWishes.nv3.distance_km} km
+                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {regularWishes.nv3.distance_km} km
                     </span>
                   )}
                 </div>
@@ -325,7 +329,8 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
       {specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2) && (
         <div className="space-y-3">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            ✨ 2 Nguyện vọng chuyên / tích hợp khuyên dùng
+            <Sparkles className="h-4 w-4 text-rose-500 shrink-0" />
+            2 Nguyện vọng chuyên / tích hợp khuyên dùng
           </h3>
           <div className="grid md:grid-cols-2 max-w-4xl gap-4">
             {/* NV1 Chuyên */}
@@ -369,8 +374,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
                 <div className="flex justify-between items-center pt-1">
                   <ChanceBadge chance={specializedWishes.nv1.chance} />
                   {specializedWishes.nv1.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {specializedWishes.nv1.distance_km} km
+                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {specializedWishes.nv1.distance_km} km
                     </span>
                   )}
                 </div>
@@ -418,8 +424,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes 
                 <div className="flex justify-between items-center pt-1">
                   <ChanceBadge chance={specializedWishes.nv2.chance} />
                   {specializedWishes.nv2.distance_km != null && (
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      📍 {specializedWishes.nv2.distance_km} km
+                    <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                      <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {specializedWishes.nv2.distance_km} km
                     </span>
                   )}
                 </div>

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MapPin, Loader2, Calculator } from 'lucide-react'
+import { MapPin, Loader2, Calculator, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import type { StudentInput } from '@/types'
 
@@ -481,9 +481,10 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
                     <li
                       key={index}
                       onClick={() => selectSuggestion(s)}
-                      className="px-3 py-2.5 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all line-clamp-2 text-[11px] leading-normal font-medium"
+                      className="px-3 py-2.5 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all line-clamp-2 text-[11px] leading-normal font-medium flex items-center gap-1.5"
                     >
-                      📍 {s.display_name}
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {s.display_name}
                     </li>
                   ))}
                 </ul>
@@ -512,14 +513,18 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
               </p>
             )}
             {geocodeStatus === 'success' && geocodedAddress && (
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 space-y-0.5 shadow-sm">
-                <p className="font-bold flex items-center gap-1">✓ Đã định vị thành công</p>
-                <p className="line-clamp-2 opacity-90">{geocodedAddress}</p>
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-600 dark:text-emerald-400 space-y-1 shadow-sm">
+                <p className="font-bold flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                  Đã định vị thành công
+                </p>
+                <p className="line-clamp-2 opacity-90 pl-5">{geocodedAddress}</p>
               </div>
             )}
             {geocodeStatus === 'error' && (
-              <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
-                ❌ Không thể xác định địa điểm. Vui lòng nhập rõ ràng hơn.
+              <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                Không thể xác định địa điểm. Vui lòng nhập rõ ràng hơn.
               </p>
             )}
           </div>

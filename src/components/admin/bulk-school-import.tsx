@@ -277,7 +277,14 @@ export function BulkSchoolImport({ secret }: { secret: string }) {
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{running ? `Đang xử lý ${current + 1} / ${total}…` : done ? `Hoàn tất ${total} dòng` : ''}</span>
-              <span className="tabular-nums">{successCount} ✓  {errorCount} ✗</span>
+              <span className="tabular-nums flex items-center gap-3">
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {successCount}
+                </span>
+                <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold">
+                  <XCircle className="h-3.5 w-3.5" /> {errorCount}
+                </span>
+              </span>
             </div>
             <Progress value={done ? 100 : pct} className="h-2" />
           </div>
