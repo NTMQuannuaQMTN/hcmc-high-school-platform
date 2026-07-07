@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { CutoffChart } from '@/components/school/cutoff-chart'
 import { AISummaryCard } from '@/components/school/ai-summary'
 import { ProgramBadge } from '@/components/shared/program-badge'
-import { GoogleMap } from '@/components/shared/google-map'
+import { SchoolDetailMap } from '@/components/school/school-detail-map'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function SchoolDetailPage() {
@@ -124,11 +124,15 @@ export default function SchoolDetailPage() {
         {/* Map */}
         <TabsContent value="map" className="mt-4">
           {school.latitude && school.longitude ? (
-            <GoogleMap
-              center={{ lat: school.latitude, lng: school.longitude }}
-              markers={[{ lat: school.latitude, lng: school.longitude, title: school.name }]}
-              className="w-full h-96 rounded-xl"
-            />
+            <div className="w-full h-[450px] rounded-xl overflow-hidden shadow-sm">
+              <SchoolDetailMap
+                name={school.name}
+                address={school.address}
+                district={school.district}
+                latitude={school.latitude}
+                longitude={school.longitude}
+              />
+            </div>
           ) : (
             <div className="border rounded-xl p-12 text-center text-muted-foreground">
               Chưa có dữ liệu toạ độ cho trường này.
