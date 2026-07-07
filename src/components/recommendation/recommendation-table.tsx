@@ -730,9 +730,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
       </div>
 
       <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[340px]">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader className="bg-muted/40 sticky top-0 z-10">
               <TableRow>
                 <TableHead className="py-3">Trường</TableHead>
                 <TableHead className="py-3">Ban</TableHead>

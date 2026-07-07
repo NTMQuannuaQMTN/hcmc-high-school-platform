@@ -165,8 +165,8 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
       schools.forEach((s) => {
         const color = s.color || '#3b82f6'
         const iconHtml = `<div class="leaflet-school-marker-container flex flex-col items-center select-none" id="marker-school-${s.id}">
-          <div class="flex items-center justify-center w-7 h-7 rounded-full bg-card border-2 shadow-md relative" style="border-color: ${color}">
-            <span class="text-[9px] font-extrabold" style="color: ${color}">${s.role}</span>
+          <div class="flex items-center justify-center min-w-[28px] px-2 py-1 rounded-full bg-card border-2 shadow-md whitespace-nowrap" style="border-color: ${color}">
+            <span class="text-[9px] font-extrabold leading-none" style="color: ${color}">${s.role}</span>
           </div>
           <div class="w-1.5 h-1.5 rotate-45 -mt-1 bg-card border-r border-b" style="border-color: ${color}"></div>
         </div>`
@@ -174,8 +174,8 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
         const customIcon = L.divIcon({
           className: 'custom-school-icon',
           html: iconHtml,
-          iconSize: [32, 36],
-          iconAnchor: [16, 36],
+          iconSize: [48, 36],
+          iconAnchor: [24, 36],
         })
 
         const marker = L.marker([s.lat, s.lng], { icon: customIcon })
