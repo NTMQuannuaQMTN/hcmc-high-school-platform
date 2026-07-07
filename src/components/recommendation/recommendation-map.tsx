@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
+import { MapPin, Globe, Moon, Map as MapIcon } from 'lucide-react'
 
 interface MapSchool {
   id: string
@@ -25,6 +27,14 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
   const polylinesRef = useRef<any[]>([])
   const homeMarkerRef = useRef<any>(null)
   const [leafletLoaded, setLeafletLoaded] = useState(false)
+
+  // VIP Map Tile Styles
+  const [mapStyle, setMapStyle] = useState<'clean' | 'dark' | 'satellite'>('dark')
+  const tileLayerRef = useRef<any>(null)
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null)
+
+  // Resolve active school for HUD detail display
+  const activeSchool = schools.find(s => s.id === (hoveredSchoolId || selectedSchoolId)) || schools[0]
 
   // Load Leaflet and its CSS on client-side only
   useEffect(() => {
@@ -70,11 +80,6 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
         attributionControl: false,
       }).setView([centerLat, centerLng], 12)
 
-      // Use CartoDB Voyager tiles (looks extremely clean)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-      }).addTo(mapInstance)
-
       // Add zoom control to bottom right
       L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
 
@@ -90,6 +95,33 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
       }
     }
   }, [leafletLoaded])
+
+  // Handle VIP map tile layer changes
+  useEffect(() => {
+    if (!map) return
+
+    import('leaflet').then((L) => {
+      if (tileLayerRef.current) {
+        map.removeLayer(tileLayerRef.current)
+      }
+
+      let url = 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png'
+      let options: any = { maxZoom: 19 }
+
+      if (mapStyle === 'clean') {
+        url = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+      } else if (mapStyle === 'satellite') {
+        url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        options = {
+          maxZoom: 19,
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
+        }
+      }
+
+      const layer = L.tileLayer(url, options).addTo(map)
+      tileLayerRef.current = layer
+    })
+  }, [map, mapStyle])
 
   // Update map markers, routes, and fits bounds when schools or home changes
   useEffect(() => {
@@ -154,9 +186,12 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
               <span>Đại diện:</span>
               <span class="px-1.5 py-0.5 rounded-full font-bold text-[9px] text-white" style="background-color: ${color}">${s.role}</span>
             </div>
-            ${s.distance_km != null ? `<div class="text-[10px] text-muted-foreground mt-1 font-mono">📍 Cách nhà: ${s.distance_km} km</div>` : ''}
+            ${s.distance_km != null ? `<div class="text-[10px] text-muted-foreground mt-1 font-mono">📍 Đường đi: ${s.distance_km} km</div>` : ''}
             ${getTravelTimeText(s.distance_km)}
           </div>`)
+          .on('click', () => {
+            setSelectedSchoolId(s.id)
+          })
 
         markersRef.current.set(s.id, marker)
         bounds.push([s.lat, s.lng])
@@ -176,11 +211,12 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
                 coords.unshift([home.lat, home.lng])
                 coords.push([s.lat, s.lng])
                 
-                // Draw precise road route
+                // Draw precise road route with VIP flow class
                 const polyline = L.polyline(coords, {
                   color: color,
                   weight: 3.5,
-                  opacity: 0.75,
+                  opacity: 0.85,
+                  className: 'animated-route-line',
                 }).addTo(map)
 
                 polylinesRef.current.push(polyline)
@@ -206,8 +242,8 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
                 // Fallback straight dashed line
                 const polyline = L.polyline([[home.lat, home.lng], [s.lat, s.lng]], {
                   color: color,
-                  weight: 2,
-                  opacity: 0.6,
+                  weight: 2.5,
+                  opacity: 0.65,
                   dashArray: '5, 8',
                 }).addTo(map)
                 polylinesRef.current.push(polyline)
@@ -217,8 +253,8 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
               // Fallback straight dashed line
               const polyline = L.polyline([[home.lat, home.lng], [s.lat, s.lng]], {
                 color: color,
-                weight: 2,
-                opacity: 0.6,
+                weight: 2.5,
+                opacity: 0.65,
                 dashArray: '5, 8',
               }).addTo(map)
               polylinesRef.current.push(polyline)
@@ -276,13 +312,66 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
     <div className="w-full h-full rounded-2xl overflow-hidden border shadow-inner relative bg-muted/20">
       <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-0" />
       
-      {/* Dynamic Overlay labels inside the map container */}
+      {/* Top Left Overlay: digital map label */}
       <div className="absolute top-3 left-3 z-[1000] bg-background/85 backdrop-blur-md px-3 py-1.5 rounded-xl border shadow-sm pointer-events-none max-w-[200px]">
         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 leading-none">Bản đồ số tuyển sinh</p>
         <p className="text-[11px] font-semibold text-foreground leading-normal">
           {schools.length > 0 ? `Đang chỉ đường ${schools.length} NV` : 'Chờ định vị nhà để vẽ tuyến đường'}
         </p>
       </div>
+
+      {/* Top Right Overlay: VIP style switcher buttons */}
+      <div className="absolute top-3 right-3 z-[1000] flex gap-1 bg-background/80 backdrop-blur-md p-1 rounded-xl border shadow-sm">
+        {(['clean', 'dark', 'satellite'] as const).map((style) => (
+          <button
+            key={style}
+            type="button"
+            onClick={() => setMapStyle(style)}
+            className={cn(
+              "p-1.5 rounded-lg transition-all flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wider",
+              mapStyle === style
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
+            title={style === 'clean' ? 'Bản đồ sáng' : style === 'dark' ? 'Bản đồ tối' : 'Ảnh vệ tinh'}
+          >
+            {style === 'clean' && <MapIcon className="h-3.5 w-3.5" />}
+            {style === 'dark' && <Moon className="h-3.5 w-3.5" />}
+            {style === 'satellite' && <Globe className="h-3.5 w-3.5" />}
+          </button>
+        ))}
+      </div>
+
+      {/* Bottom Left Overlay: Glassmorphic School Detail HUD */}
+      {activeSchool && (
+        <div className="absolute bottom-3 left-3 right-3 lg:right-auto z-[1000] lg:max-w-xs bg-background/85 backdrop-blur-md p-3.5 rounded-xl border shadow-md space-y-2.5 transition-all duration-300">
+          <div className="flex justify-between items-start gap-3">
+            <div>
+              <span className="text-[9px] font-bold text-white px-2 py-0.5 rounded-full inline-block mb-1" style={{ backgroundColor: activeSchool.color }}>
+                {activeSchool.role}
+              </span>
+              <h3 className="text-xs font-bold text-foreground leading-tight">{activeSchool.name}</h3>
+            </div>
+            {activeSchool.distance_km != null && (
+              <span className="text-[10px] font-mono font-bold text-muted-foreground shrink-0 flex items-center gap-0.5">
+                <MapPin className="h-3 w-3" />
+                {activeSchool.distance_km} km
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[10px] border-t border-border/40 pt-2 font-medium">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <span>🛵</span>
+              <span>Xe máy: ~{activeSchool.distance_km != null ? Math.round(activeSchool.distance_km * 2.4) : '—'} phút</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <span>🚌</span>
+              <span>Xe buýt: ~{activeSchool.distance_km != null ? Math.round(activeSchool.distance_km * 4) + 10 : '—'} phút</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

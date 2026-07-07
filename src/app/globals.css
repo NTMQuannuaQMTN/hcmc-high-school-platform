@@ -124,10 +124,6 @@ body {
   font-family: inherit !important;
 }
 
-/* Adjust map tiles to make them dark-themed in Dark Mode */
-.dark .leaflet-tile-pane {
-  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-}
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
@@ -172,4 +168,18 @@ body {
     opacity: 0;
   }
 }
+
+/* Animated flowing neon route lines */
+@keyframes routeFlow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.animated-route-line {
+  stroke-dasharray: 8, 8;
+  animation: routeFlow 0.8s linear infinite;
+  filter: drop-shadow(0 0 2px currentColor);
+}
+
 
