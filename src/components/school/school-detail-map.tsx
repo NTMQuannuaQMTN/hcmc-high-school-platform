@@ -20,6 +20,7 @@ export function SchoolDetailMap({ name, address, district, latitude, longitude }
 
   // Map settings
   const [mapStyle, setMapStyle] = useState<'satellite' | 'clean' | 'dark'>('satellite')
+  const [is3d, setIs3d] = useState(true) // default to true to show 3D on load!
   const tileLayerRef = useRef<any>(null)
 
   // Load Leaflet dynamically
@@ -48,7 +49,7 @@ export function SchoolDetailMap({ name, address, district, latitude, longitude }
       const mapInstance = L.map(mapContainerRef.current!, {
         zoomControl: false,
         attributionControl: false,
-      }).setView([latitude, longitude], 17)
+      }).setView([latitude, longitude], 18) // high zoom for 3D look
 
       L.control.zoom({ position: 'bottomright' }).addTo(mapInstance)
 
@@ -64,6 +65,16 @@ export function SchoolDetailMap({ name, address, district, latitude, longitude }
       }
     }
   }, [leafletLoaded, latitude, longitude])
+
+  // Handle 3D mode zoom adjustment
+  useEffect(() => {
+    if (!map) return
+    if (is3d) {
+      map.setZoom(18, { animate: true })
+    } else {
+      map.setZoom(17, { animate: true })
+    }
+  }, [map, is3d])
 
   // Handle Layer switching
   useEffect(() => {
@@ -132,7 +143,10 @@ export function SchoolDetailMap({ name, address, district, latitude, longitude }
   const googleDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
 
   return (
-    <div className="w-full h-full rounded-2xl overflow-hidden border shadow-inner relative bg-muted/20">
+    <div className={cn(
+      "w-full h-full rounded-2xl overflow-hidden border shadow-inner relative bg-muted/20",
+      is3d && "leaflet-3d-tilted"
+    )}>
       <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-0" />
       
       {/* Top Left Overlay: digital map label */}
@@ -141,8 +155,25 @@ export function SchoolDetailMap({ name, address, district, latitude, longitude }
         <p className="text-[11px] font-semibold text-foreground leading-normal">{name}</p>
       </div>
 
-      {/* Top Right Overlay: style switcher */}
-      <div className="absolute top-3 right-3 z-[1000] flex gap-1 bg-background/80 backdrop-blur-md p-1 rounded-xl border shadow-sm">
+      {/* Top Right Overlay: style switcher & 3D toggle */}
+      <div className="absolute top-3 right-3 z-[1000] flex gap-1 bg-background/80 backdrop-blur-md p-1 rounded-xl border shadow-sm items-center">
+        {/* 3D Toggle */}
+        <button
+          type="button"
+          onClick={() => setIs3d(!is3d)}
+          className={cn(
+            "px-2.5 py-1 rounded-lg transition-all text-[10px] font-extrabold uppercase tracking-wider flex items-center justify-center min-w-[36px]",
+            is3d
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+          title={is3d ? "Bật 2D phẳng" : "Bật 3D nghiêng"}
+        >
+          3D
+        </button>
+        
+        <div className="w-[1px] bg-border/40 self-stretch my-1" />
+
         {(['clean', 'dark', 'satellite'] as const).map((style) => (
           <button
             key={style}

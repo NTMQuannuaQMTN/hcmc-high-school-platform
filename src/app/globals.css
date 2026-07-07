@@ -182,4 +182,29 @@ body {
   filter: drop-shadow(0 0 2px currentColor);
 }
 
+/* Premium Leaflet pseudo-3D tilt effect */
+.leaflet-3d-tilted {
+  perspective: 1000px;
+}
+
+.leaflet-3d-tilted .leaflet-map-pane {
+  transform: rotateX(55deg) rotateZ(-15deg);
+  transform-origin: 50% 50%;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Keep markers and popups standing upright */
+.leaflet-3d-tilted .custom-school-detail-icon {
+  transform: rotateX(-55deg) rotateZ(15deg) !important;
+  transform-origin: bottom center !important;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.leaflet-3d-tilted .leaflet-popup-pane {
+  transform: rotateX(-55deg) rotateZ(15deg) !important;
+  transform-origin: bottom center !important;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
 
