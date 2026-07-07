@@ -351,9 +351,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
                         <Link href={`/schools/${regularWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
                           {regularWishes.nv1.school_name}
                         </Link>
-                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
                           <MapPin className="h-3 w-3 shrink-0" />
-                          {getActualDistrict(regularWishes.nv1.district)} ({regularWishes.nv1.district})
+                          <span className="truncate">{regularWishes.nv1.district}</span>
                         </p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <span className="text-[11px] font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-400 px-2 py-0.5 rounded-full">
@@ -413,9 +413,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
                         <Link href={`/schools/${regularWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
                           {regularWishes.nv2.school_name}
                         </Link>
-                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
                           <MapPin className="h-3 w-3 shrink-0" />
-                          {getActualDistrict(regularWishes.nv2.district)} ({regularWishes.nv2.district})
+                          <span className="truncate">{regularWishes.nv2.district}</span>
                         </p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full">
@@ -475,9 +475,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
                         <Link href={`/schools/${regularWishes.nv3.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
                           {regularWishes.nv3.school_name}
                         </Link>
-                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
                           <MapPin className="h-3 w-3 shrink-0" />
-                          {getActualDistrict(regularWishes.nv3.district)} ({regularWishes.nv3.district})
+                          <span className="truncate">{regularWishes.nv3.district}</span>
                         </p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <span className="text-[11px] font-semibold bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full">
@@ -548,9 +548,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
                         <Link href={`/schools/${specializedWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
                           {specializedWishes.nv1.school_name}
                         </Link>
-                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
                           <MapPin className="h-3 w-3 shrink-0" />
-                          {getActualDistrict(specializedWishes.nv1.district)} ({specializedWishes.nv1.district})
+                          <span className="truncate">{specializedWishes.nv1.district}</span>
                         </p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <span className="text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full">
@@ -611,9 +611,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
                         <Link href={`/schools/${specializedWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
                           {specializedWishes.nv2.school_name}
                         </Link>
-                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1 line-clamp-1">
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
                           <MapPin className="h-3 w-3 shrink-0" />
-                          {getActualDistrict(specializedWishes.nv2.district)} ({specializedWishes.nv2.district})
+                          <span className="truncate">{specializedWishes.nv2.district}</span>
                         </p>
                         <div className="flex items-center gap-1.5 pt-1">
                           <span className="text-[11px] font-semibold bg-pink-500/10 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded-full">
@@ -772,9 +772,9 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
                         {r.school_name}
                         <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
                       </span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1 min-w-0">
                         <MapPin className="h-3 w-3 shrink-0" />
-                        {getActualDistrict(r.district)} ({r.district})
+                        <span className="truncate">{r.district}</span>
                       </span>
                     </Link>
                   </TableCell>

@@ -1,16 +1,17 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { RecommendationForm } from '@/components/recommendation/recommendation-form'
 import { RecommendationTable } from '@/components/recommendation/recommendation-table'
 import { useRecommendation } from '@/hooks/use-recommendation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowUp } from 'lucide-react'
 import type { RecommendationResponse } from '@/types'
 
 export default function RecommendPage() {
   const [response, setResponse] = useState<RecommendationResponse | null>(null)
   const [homeCoords, setHomeCoords] = useState<{ lat: number; lng: number } | null>(null)
   const mutation = useRecommendation()
+  const formRef = useRef<HTMLDivElement>(null)
 
   return (
     <div className="space-y-6">
@@ -22,7 +23,7 @@ export default function RecommendPage() {
       </div>
 
       <div className="grid lg:grid-cols-[320px_1fr] gap-6 items-start">
-        <div className="lg:sticky lg:top-20">
+        <div className="lg:sticky lg:top-20" ref={formRef}>
           <RecommendationForm
             onSubmit={(input) => {
               setHomeCoords(input.lat && input.lng ? { lat: input.lat, lng: input.lng } : null)
@@ -55,8 +56,8 @@ export default function RecommendPage() {
           )}
 
           {!mutation.isPending && response !== null && (
-            <RecommendationTable 
-              results={response.results} 
+            <RecommendationTable
+              results={response.results}
               regularWishes={response.regularWishes}
               specializedWishes={response.specializedWishes}
               home={homeCoords}
@@ -64,6 +65,17 @@ export default function RecommendPage() {
           )}
         </div>
       </div>
+
+      {(mutation.isPending || response !== null) && (
+        <button
+          onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="lg:hidden fixed bottom-6 right-5 z-50 flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium px-4 py-2.5 shadow-lg"
+          aria-label="Cuộn lên form"
+        >
+          <ArrowUp className="h-4 w-4" />
+          Nhập lại
+        </button>
+      )}
     </div>
   )
 }
