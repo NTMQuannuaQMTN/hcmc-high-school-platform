@@ -120,6 +120,52 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [hoveredSchoolId, setHoveredSchoolId] = useState<string | null>(null)
 
+  // Analyze wishes strategy
+  const strategyAlerts = useMemo(() => {
+    const alerts = []
+    
+    if (regularWishes) {
+      const { nv1, nv2, nv3 } = regularWishes
+      
+      // 1. Hierarchy Check
+      if (nv1 && nv2 && (nv2.latest_cutoff ?? 0) > (nv1.latest_cutoff ?? 0)) {
+        alerts.push({
+          type: 'danger',
+          title: 'Chiến thuật ngược điểm chuẩn (NV2 > NV1)',
+          message: `Điểm chuẩn của NV2 (${nv2.school_name} - ${nv2.latest_cutoff} điểm) đang cao hơn NV1 (${nv1.school_name} - ${nv1.latest_cutoff} điểm). Nếu bạn không đỗ NV1, hệ thống sẽ xét tiếp NV2 nhưng do điểm chuẩn NV2 cao hơn nên tỷ lệ trượt cả 2 nguyện vọng là cực kỳ lớn.`
+        })
+      }
+      if (nv2 && nv3 && (nv3.latest_cutoff ?? 0) > (nv2.latest_cutoff ?? 0)) {
+        alerts.push({
+          type: 'danger',
+          title: 'Chiến thuật ngược điểm chuẩn (NV3 > NV2)',
+          message: `Điểm chuẩn của NV3 (${nv3.school_name} - ${nv3.latest_cutoff} điểm) đang cao hơn NV2 (${nv2.school_name} - ${nv2.latest_cutoff} điểm). Cần hạ điểm chuẩn của NV3 xuống thấp hẳn để đóng vai trò phương án dự phòng chốt chặn.`
+        })
+      }
+
+      // 2. Safety Check (NV3 should be HIGH chance)
+      if (nv3 && nv3.chance !== 'HIGH') {
+        alerts.push({
+          type: 'warning',
+          title: 'Điểm chốt chặn chưa an toàn',
+          message: `Nguyện vọng 3 (${nv3.school_name}) đang ở mức cơ hội "${nv3.chance === 'MEDIUM' ? 'Trung bình' : 'Thấp'}". Để an toàn tuyệt đối tránh rớt cả 3 nguyện vọng công lập, bạn nên chọn trường có tỷ lệ đỗ "Cao" cho NV3.`
+        })
+      }
+
+      // 3. Distance Check (> 12km)
+      const farSchools = [nv1, nv2, nv3].filter(nv => nv && nv.distance_km && nv.distance_km > 12)
+      if (farSchools.length > 0) {
+        alerts.push({
+          type: 'info',
+          title: 'Khoảng cách di chuyển lớn',
+          message: `Bạn đang đăng ký các trường cách nhà trên 12 km: ${farSchools.map(s => s?.school_name).join(', ')}. Hãy cân nhắc kỹ thời gian đi lại và phương tiện di chuyển hàng ngày để không ảnh hưởng sức khỏe học tập.`
+        })
+      }
+    }
+    
+    return alerts
+  }, [regularWishes])
+
   const mapSchools = useMemo(() => {
     const list = []
     if (regularWishes) {
@@ -238,6 +284,51 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
         (specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2))) && (
         <div className="grid lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-6 items-stretch">
           <div className="space-y-6 flex flex-col justify-start">
+            {/* AI STRATEGY ADVISOR PANEL */}
+            {regularWishes && (
+              <div className="bg-background/80 backdrop-blur-md p-4 rounded-xl border border-primary/20 shadow-md space-y-3">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="h-4 w-4 text-primary shrink-0 animate-pulse" />
+                    Cố vấn chiến thuật nguyện vọng AI
+                  </h4>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">AI Advisor</span>
+                </div>
+                
+                <div className="space-y-2 text-xs">
+                  {strategyAlerts.length > 0 ? (
+                    strategyAlerts.map((a, idx) => (
+                      <div 
+                        key={idx} 
+                        className={cn(
+                          "p-3 rounded-lg border flex gap-2.5 items-start",
+                          a.type === 'danger' ? "bg-red-500/5 border-red-500/20 text-red-700 dark:text-red-300" :
+                          a.type === 'warning' ? "bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-300" :
+                          "bg-blue-500/5 border-blue-500/20 text-blue-700 dark:text-blue-300"
+                        )}
+                      >
+                        <span className="text-sm leading-none">
+                          {a.type === 'danger' ? '🚨' : a.type === 'warning' ? '⚠️' : '🚗'}
+                        </span>
+                        <div>
+                          <div className="font-bold mb-0.5">{a.title}</div>
+                          <p className="text-[10px] leading-relaxed opacity-90">{a.message}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex gap-2.5 items-start">
+                      <span className="text-sm leading-none">✅</span>
+                      <div>
+                        <div className="font-bold mb-0.5">Chiến thuật đăng ký tối ưu</div>
+                        <p className="text-[10px] leading-relaxed opacity-90">Lộ trình các nguyện vọng được sắp xếp khoa học: Điểm chuẩn giảm dần, độ an toàn tăng dần ở NV3, và khoảng cách địa lý thuận tiện để đi lại hàng ngày.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* 1. REGULAR WISHES BOARD */}
             {regularWishes && (regularWishes.nv1 || regularWishes.nv2 || regularWishes.nv3) && (
               <div className="space-y-3">
