@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Loader2 } from 'lucide-react'
 
 interface Props {
   children: (secret: string) => React.ReactNode
@@ -12,6 +12,24 @@ interface Props {
 export function AdminGuard({ children }: Props) {
   const [input, setInput] = useState('')
   const [secret, setSecret] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  async function handleLogin() {
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await fetch('/api/admin/geocode?address=test', {
+        headers: { 'x-admin-secret': input },
+      })
+      if (res.status === 401) { setError(true); return }
+      setSecret(input)
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (secret) return <>{children(secret)}</>
 
@@ -29,11 +47,12 @@ export function AdminGuard({ children }: Props) {
             type="password"
             placeholder="Nhập ADMIN_SECRET"
             value={input}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && setSecret(input)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setInput(e.target.value); setError(false) }}
+            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
           />
-          <Button className="w-full" onClick={() => setSecret(input)}>
-            Đăng nhập
+          {error && <p className="text-xs text-destructive">Sai mật khẩu. Vui lòng thử lại.</p>}
+          <Button className="w-full" onClick={handleLogin} disabled={loading || !input}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Đăng nhập'}
           </Button>
         </CardContent>
       </Card>

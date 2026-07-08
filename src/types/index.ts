@@ -32,11 +32,16 @@ export interface Cutoff {
   created_at: string
 }
 
+export type ReviewerRole = 'student' | 'parent' | 'other'
+
 export interface Review {
   id: string
   school_id: string
   source: string | null
   content: string
+  rating: number | null
+  author_name: string | null
+  reviewer_role: ReviewerRole | null
   created_at: string
 }
 

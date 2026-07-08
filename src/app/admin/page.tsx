@@ -5,9 +5,10 @@ import { AddProgramForm } from '@/components/admin/add-program-form'
 import { AddCutoffForm } from '@/components/admin/add-cutoff-form'
 import { CSVImport } from '@/components/admin/csv-import'
 import { BulkSchoolImport } from '@/components/admin/bulk-school-import'
+import { ScrapeReviewsTool } from '@/components/admin/scrape-reviews-tool'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { School, BookOpen, TrendingUp, Upload } from 'lucide-react'
+import { School, BookOpen, TrendingUp, Upload, Globe } from 'lucide-react'
 
 export default function AdminPage() {
   return (
@@ -20,7 +21,7 @@ export default function AdminPage() {
           </div>
 
           <Tabs defaultValue="schools">
-            <TabsList className="grid w-full grid-cols-4 max-w-lg">
+            <TabsList className="grid w-full grid-cols-5 max-w-xl">
               <TabsTrigger value="schools" className="gap-1.5">
                 <School className="h-4 w-4" />
                 <span className="hidden sm:inline">Trường</span>
@@ -36,6 +37,10 @@ export default function AdminPage() {
               <TabsTrigger value="import" className="gap-1.5">
                 <Upload className="h-4 w-4" />
                 <span className="hidden sm:inline">Import</span>
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="gap-1.5">
+                <Globe className="h-4 w-4" />
+                <span className="hidden sm:inline">Đánh giá</span>
               </TabsTrigger>
             </TabsList>
 
@@ -92,6 +97,18 @@ export default function AdminPage() {
                 </CardHeader>
                 <CardContent>
                   <CSVImport secret={secret} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reviews" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Scrape đánh giá từ web</CardTitle>
+                  <CardDescription>Tự động tìm kiếm đánh giá về trường trên DuckDuckGo và lưu vào DB</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrapeReviewsTool secret={secret} />
                 </CardContent>
               </Card>
             </TabsContent>

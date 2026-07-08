@@ -4,11 +4,13 @@ import { useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { MapPin, Globe, Building2, ArrowLeft, Calendar } from 'lucide-react'
+import { MapPin, Globe, Building2, ArrowLeft, Calendar, GraduationCap, Users, User } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { CutoffChart } from '@/components/school/cutoff-chart'
 import { AISummaryCard } from '@/components/school/ai-summary'
+import { ReviewForm } from '@/components/school/review-form'
+import { StarDisplay, StarRating } from '@/components/school/star-rating'
 import { ProgramBadge } from '@/components/shared/program-badge'
 import { SchoolDetailMap } from '@/components/school/school-detail-map'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -142,25 +144,61 @@ export default function SchoolDetailPage() {
 
         {/* Reviews */}
         <TabsContent value="reviews" className="space-y-4 mt-4">
+          <ReviewForm schoolId={school.id} />
+
           <AISummaryCard schoolId={school.id} reviewCount={school.reviews.length} />
 
           {school.reviews.length === 0 ? (
             <div className="border rounded-xl p-12 text-center text-muted-foreground">
-              Chưa có đánh giá nào.
+              Chưa có đánh giá nào. Hãy là người đầu tiên!
             </div>
           ) : (
-            school.reviews.map((r) => (
-              <Card key={r.id}>
-                <CardContent className="pt-4">
-                  <p className="text-sm leading-relaxed">{r.content}</p>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="font-medium">{r.source ?? 'Ẩn danh'}</span>
-                    <span>·</span>
-                    <span>{new Date(r.created_at).toLocaleDateString('vi-VN')}</span>
+            <>
+              {/* Aggregate rating */}
+              {(() => {
+                const rated = school.reviews.filter((r) => r.rating != null)
+                if (rated.length === 0) return null
+                const avg = rated.reduce((s, r) => s + r.rating!, 0) / rated.length
+                return (
+                  <div className="flex items-center gap-3 px-1">
+                    <StarDisplay rating={avg} count={rated.length} />
                   </div>
-                </CardContent>
-              </Card>
-            ))
+                )
+              })()}
+
+              {school.reviews.map((r) => {
+                const roleMap = {
+                  student: { label: 'Học sinh', icon: <GraduationCap className="h-3 w-3" /> },
+                  parent:  { label: 'Phụ huynh', icon: <Users className="h-3 w-3" /> },
+                  other:   { label: 'Khác', icon: <User className="h-3 w-3" /> },
+                }
+                const roleInfo = r.reviewer_role ? roleMap[r.reviewer_role] : null
+                return (
+                  <Card key={r.id}>
+                    <CardContent className="pt-4 space-y-2">
+                      {r.rating != null && <StarRating value={r.rating} readonly size="sm" />}
+                      <p className="text-sm leading-relaxed">{r.content}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                        <span className="font-medium">
+                          {r.author_name ?? (r.source === 'user' ? 'Ẩn danh' : (r.source ?? 'Ẩn danh'))}
+                        </span>
+                        {roleInfo && (
+                          <>
+                            <span>·</span>
+                            <span className="flex items-center gap-1">
+                              {roleInfo.icon}
+                              {roleInfo.label}
+                            </span>
+                          </>
+                        )}
+                        <span>·</span>
+                        <span>{new Date(r.created_at).toLocaleDateString('vi-VN')}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </>
           )}
         </TabsContent>
       </Tabs>
