@@ -77,7 +77,7 @@ export function AISummaryCard({ schoolId, reviewCount }: Props) {
         <CardTitle className="flex items-center gap-2 text-base">
           <Sparkles className="h-4 w-4 text-amber-500" />
           Tóm tắt đánh giá bằng AI
-          <Badge variant="outline" className="text-xs font-normal">GPT-4o mini</Badge>
+          <Badge variant="outline" className="text-xs font-normal">Gemini 2.5 Flash</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
