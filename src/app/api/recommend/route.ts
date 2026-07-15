@@ -67,6 +67,7 @@ export async function POST(req: Request) {
     results,
     regularWishes: wishesResult ? wishesResult.regularWishes : null,
     specializedWishes: wishesResult ? wishesResult.specializedWishes : null,
+    integratedWishes: wishesResult ? wishesResult.integratedWishes : null,
   }
 
   return NextResponse.json(response)

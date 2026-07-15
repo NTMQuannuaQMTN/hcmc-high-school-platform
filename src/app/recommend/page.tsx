@@ -60,7 +60,9 @@ export default function RecommendPage() {
               results={response.results}
               regularWishes={response.regularWishes}
               specializedWishes={response.specializedWishes}
+              integratedWishes={response.integratedWishes}
               home={homeCoords}
+              onHomeChange={setHomeCoords}
             />
           )}
         </div>

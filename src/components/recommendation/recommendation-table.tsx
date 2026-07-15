@@ -105,12 +105,17 @@ interface Props {
     nv1: RecommendationResult | null
     nv2: RecommendationResult | null
   } | null
+  integratedWishes?: {
+    nv1: RecommendationResult | null
+    nv2: RecommendationResult | null
+  } | null
   home?: { lat: number; lng: number } | null
+  onHomeChange?: (coords: { lat: number; lng: number }) => void
 }
 
 import { getActualDistrict } from '@/lib/utils'
 
-export function RecommendationTable({ results, regularWishes, specializedWishes, home }: Props) {
+export function RecommendationTable({ results, regularWishes, specializedWishes, integratedWishes, home, onHomeChange }: Props) {
   const [search, setSearch] = useState('')
   const [chanceFilter, setChanceFilter] = useState<AdmissionChance | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('ALL')
@@ -227,8 +232,32 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
         })
       }
     }
+    if (integratedWishes) {
+      if (integratedWishes.nv1?.latitude && integratedWishes.nv1?.longitude) {
+        list.push({
+          id: integratedWishes.nv1.school_id,
+          name: integratedWishes.nv1.school_name,
+          lat: integratedWishes.nv1.latitude,
+          lng: integratedWishes.nv1.longitude,
+          role: 'NV1 TH',
+          color: '#14b8a6', // Teal
+          distance_km: integratedWishes.nv1.distance_km,
+        })
+      }
+      if (integratedWishes.nv2?.latitude && integratedWishes.nv2?.longitude) {
+        list.push({
+          id: integratedWishes.nv2.school_id,
+          name: integratedWishes.nv2.school_name,
+          lat: integratedWishes.nv2.latitude,
+          lng: integratedWishes.nv2.longitude,
+          role: 'NV2 TH',
+          color: '#06b6d4', // Cyan
+          distance_km: integratedWishes.nv2.distance_km,
+        })
+      }
+    }
     return list
-  }, [regularWishes, specializedWishes])
+  }, [regularWishes, specializedWishes, integratedWishes])
 
   const actualDistricts = useMemo(() => {
     return Array.from(new Set(results.map((r) => getActualDistrict(r.district)))).sort()
@@ -281,7 +310,8 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
   return (
     <div className="space-y-6">
       {((regularWishes && (regularWishes.nv1 || regularWishes.nv2 || regularWishes.nv3)) ||
-        (specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2))) && (
+        (specializedWishes && (specializedWishes.nv1 || specializedWishes.nv2)) ||
+        (integratedWishes && (integratedWishes.nv1 || integratedWishes.nv2))) && (
         <div className="grid lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_420px] gap-6 items-stretch">
           <div className="space-y-6 flex flex-col justify-start">
             {/* AI STRATEGY ADVISOR PANEL */}
@@ -531,7 +561,7 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4 text-rose-500 shrink-0" />
-                  2 Nguyện vọng chuyên / tích hợp khuyên dùng
+                  2 Nguyện vọng chuyên khuyên dùng
                 </h3>
                 <div className="grid md:grid-cols-2 max-w-4xl gap-4">
                   {/* NV1 Chuyên */}
@@ -662,11 +692,132 @@ export function RecommendationTable({ results, regularWishes, specializedWishes,
                 </div>
               </div>
             )}
+
+            {/* 3. INTEGRATED WISHES BOARD */}
+            {integratedWishes && (integratedWishes.nv1 || integratedWishes.nv2) && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-teal-500 shrink-0" />
+                  2 Nguyện vọng tích hợp khuyên dùng
+                </h3>
+                <div className="grid md:grid-cols-2 max-w-4xl gap-4">
+                  {integratedWishes.nv1 && (
+                    <div
+                      onMouseEnter={() => setHoveredSchoolId(integratedWishes.nv1?.school_id || null)}
+                      onMouseLeave={() => setHoveredSchoolId(null)}
+                      className="relative overflow-hidden rounded-xl border border-teal-500/20 bg-gradient-to-br from-teal-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between cursor-pointer"
+                    >
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-teal-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                        NV1 TÍCH HỢP • ĐỘT PHÁ
+                      </div>
+                      <div className="space-y-1.5">
+                        <Link href={`/schools/${integratedWishes.nv1.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                          {integratedWishes.nv1.school_name}
+                        </Link>
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{integratedWishes.nv1.district}</span>
+                        </p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold bg-teal-500/10 text-teal-600 dark:text-teal-400 px-2 py-0.5 rounded-full">
+                            {integratedWishes.nv1.program_name}
+                          </span>
+                          <ProgramBadge type={integratedWishes.nv1.program_type} />
+                        </div>
+                      </div>
+                      <div className="space-y-2 border-t border-border/40 pt-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {integratedWishes.nv1.latest_year}</span>
+                            <span className="font-mono font-extrabold text-base text-foreground leading-none">{integratedWishes.nv1.latest_cutoff.toFixed(2)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                            <span className={cn("font-mono font-extrabold text-sm", integratedWishes.nv1.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                              {integratedWishes.nv1.score_difference > 0 ? "+" : ""}{integratedWishes.nv1.score_difference.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center pt-1">
+                          <ChanceBadge chance={integratedWishes.nv1.chance} />
+                          {integratedWishes.nv1.distance_km != null && (
+                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 shrink-0" />{integratedWishes.nv1.distance_km} km
+                            </span>
+                          )}
+                        </div>
+                        {integratedWishes.nv1.distance_km != null && (
+                          <div className="text-[9px] text-muted-foreground/80 font-medium flex flex-col gap-0.5 pt-1.5 border-t border-border/20">
+                            <div>Xe máy: ~{Math.round(integratedWishes.nv1.distance_km * 2.4)} phút</div>
+                            <div>Xe buýt: ~{Math.round(integratedWishes.nv1.distance_km * 4) + 10} phút</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {integratedWishes.nv2 && (
+                    <div
+                      onMouseEnter={() => setHoveredSchoolId(integratedWishes.nv2?.school_id || null)}
+                      onMouseLeave={() => setHoveredSchoolId(null)}
+                      className="relative overflow-hidden rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/5 to-transparent p-4 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between cursor-pointer"
+                    >
+                      <div className="absolute top-0 right-0 px-2 py-0.5 bg-cyan-500 text-white font-mono text-[9px] font-bold rounded-bl-lg tracking-wider">
+                        NV2 TÍCH HỢP • AN TOÀN
+                      </div>
+                      <div className="space-y-1.5">
+                        <Link href={`/schools/${integratedWishes.nv2.school_id}`} className="font-bold hover:text-primary transition-colors text-sm line-clamp-1 block pr-12">
+                          {integratedWishes.nv2.school_name}
+                        </Link>
+                        <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{integratedWishes.nv2.district}</span>
+                        </p>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-2 py-0.5 rounded-full">
+                            {integratedWishes.nv2.program_name}
+                          </span>
+                          <ProgramBadge type={integratedWishes.nv2.program_type} />
+                        </div>
+                      </div>
+                      <div className="space-y-2 border-t border-border/40 pt-2">
+                        <div className="flex justify-between items-end">
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Điểm chuẩn {integratedWishes.nv2.latest_year}</span>
+                            <span className="font-mono font-extrabold text-base text-foreground leading-none">{integratedWishes.nv2.latest_cutoff.toFixed(2)}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground block leading-none mb-0.5">Chênh lệch</span>
+                            <span className={cn("font-mono font-extrabold text-sm", integratedWishes.nv2.score_difference >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                              {integratedWishes.nv2.score_difference > 0 ? "+" : ""}{integratedWishes.nv2.score_difference.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center pt-1">
+                          <ChanceBadge chance={integratedWishes.nv2.chance} />
+                          {integratedWishes.nv2.distance_km != null && (
+                            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-0.5">
+                              <MapPin className="h-3 w-3 shrink-0" />{integratedWishes.nv2.distance_km} km
+                            </span>
+                          )}
+                        </div>
+                        {integratedWishes.nv2.distance_km != null && (
+                          <div className="text-[9px] text-muted-foreground/80 font-medium flex flex-col gap-0.5 pt-1.5 border-t border-border/20">
+                            <div>Xe máy: ~{Math.round(integratedWishes.nv2.distance_km * 2.4)} phút</div>
+                            <div>Xe buýt: ~{Math.round(integratedWishes.nv2.distance_km * 4) + 10} phút</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sticky digital map visualization */}
           <div className="h-[320px] lg:h-[450px] lg:sticky lg:top-6 shrink-0">
-            <RecommendationMap home={home} schools={mapSchools} hoveredSchoolId={hoveredSchoolId} />
+            <RecommendationMap home={home} schools={mapSchools} hoveredSchoolId={hoveredSchoolId} onHomeChange={onHomeChange} />
           </div>
         </div>
       )}

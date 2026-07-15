@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { MapPin, Globe, Moon, Map as MapIcon } from 'lucide-react'
+import { MapPin, Globe, Moon, Map as MapIcon, LocateFixed, Loader2 } from 'lucide-react'
 
 interface MapSchool {
   id: string
@@ -17,9 +17,10 @@ interface Props {
   home?: { lat: number; lng: number } | null
   schools: MapSchool[]
   hoveredSchoolId: string | null
+  onHomeChange?: (coords: { lat: number; lng: number }) => void
 }
 
-export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
+export function RecommendationMap({ home, schools, hoveredSchoolId, onHomeChange }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const [map, setMap] = useState<any>(null)
@@ -27,6 +28,21 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
   const polylinesRef = useRef<any[]>([])
   const homeMarkerRef = useRef<any>(null)
   const [leafletLoaded, setLeafletLoaded] = useState(false)
+
+  const [gpsLoading, setGpsLoading] = useState(false)
+
+  function handleGps() {
+    if (!navigator.geolocation) return
+    setGpsLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsLoading(false)
+        onHomeChange?.({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      },
+      () => setGpsLoading(false),
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   // VIP Map Tile Styles
   const [mapStyle, setMapStyle] = useState<'clean' | 'dark' | 'satellite'>('dark')
@@ -320,26 +336,42 @@ export function RecommendationMap({ home, schools, hoveredSchoolId }: Props) {
         </p>
       </div>
 
-      {/* Top Right Overlay: VIP style switcher buttons */}
-      <div className="absolute top-3 right-3 z-[1000] flex gap-1 bg-background/80 backdrop-blur-md p-1 rounded-xl border shadow-sm">
-        {(['clean', 'dark', 'satellite'] as const).map((style) => (
+      {/* Top Right Overlay: VIP style switcher + GPS button */}
+      <div className="absolute top-3 right-3 z-[1000] flex gap-1.5">
+        {onHomeChange && (
           <button
-            key={style}
             type="button"
-            onClick={() => setMapStyle(style)}
+            onClick={handleGps}
+            disabled={gpsLoading}
             className={cn(
-              "p-1.5 rounded-lg transition-all flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wider",
-              mapStyle === style
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              "p-1.5 rounded-xl border shadow-sm bg-background/80 backdrop-blur-md transition-all flex items-center justify-center",
+              gpsLoading ? "text-muted-foreground" : "text-primary hover:bg-primary hover:text-primary-foreground"
             )}
-            title={style === 'clean' ? 'Bản đồ sáng' : style === 'dark' ? 'Bản đồ tối' : 'Ảnh vệ tinh'}
+            title="Lấy vị trí hiện tại"
           >
-            {style === 'clean' && <MapIcon className="h-3.5 w-3.5" />}
-            {style === 'dark' && <Moon className="h-3.5 w-3.5" />}
-            {style === 'satellite' && <Globe className="h-3.5 w-3.5" />}
+            {gpsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
           </button>
-        ))}
+        )}
+        <div className="flex gap-1 bg-background/80 backdrop-blur-md p-1 rounded-xl border shadow-sm">
+          {(['clean', 'dark', 'satellite'] as const).map((style) => (
+            <button
+              key={style}
+              type="button"
+              onClick={() => setMapStyle(style)}
+              className={cn(
+                "p-1.5 rounded-lg transition-all flex items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wider",
+                mapStyle === style
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+              title={style === 'clean' ? 'Bản đồ sáng' : style === 'dark' ? 'Bản đồ tối' : 'Ảnh vệ tinh'}
+            >
+              {style === 'clean' && <MapIcon className="h-3.5 w-3.5" />}
+              {style === 'dark' && <Moon className="h-3.5 w-3.5" />}
+              {style === 'satellite' && <Globe className="h-3.5 w-3.5" />}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Bottom Left Overlay: Glassmorphic School Detail HUD */}

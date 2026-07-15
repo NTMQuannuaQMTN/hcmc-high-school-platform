@@ -110,6 +110,10 @@ export interface RecommendationResponse {
     nv1: RecommendationResult | null
     nv2: RecommendationResult | null
   } | null
+  integratedWishes?: {
+    nv1: RecommendationResult | null
+    nv2: RecommendationResult | null
+  } | null
 }
 
 export interface AISummary {
