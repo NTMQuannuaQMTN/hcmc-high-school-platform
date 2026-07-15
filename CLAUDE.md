@@ -81,7 +81,7 @@ reviews          id, school_id, source, content
 ```
 NORMAL:      total = toan + van + ngoai_ngu                  (max 30)
 SPECIALIZED: total = toan + van + ngoai_ngu + 2 × chuyen     (max 50)
-INTEGRATED:  total = toan + van + ngoai_ngu + 2 × tich_hop   (max 50)
+INTEGRATED:  total = toan + van + ngoai_ngu + tich_hop        (max 40)
 
 Xác suất đậu:
   diff = total - cutoff_score

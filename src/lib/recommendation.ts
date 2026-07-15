@@ -36,7 +36,7 @@ export function computeTotal(type: ProgramType, input: StudentInput): number {
     return base + 2 * input.gifted_score
   }
   if (type === 'INTEGRATED' && input.integrated_score !== undefined) {
-    return base + 2 * input.integrated_score
+    return base + input.integrated_score
   }
   return base
 }
@@ -255,7 +255,7 @@ export function computeRecommendations(
       return true
     })
     .map((p) => {
-      const maxScore = p.program_type === 'NORMAL' ? 30 : 50
+      const maxScore = p.program_type === 'NORMAL' ? 30 : p.program_type === 'INTEGRATED' ? 40 : 50
       let cutoff = p.latest_cutoff
       let year = p.latest_year
 

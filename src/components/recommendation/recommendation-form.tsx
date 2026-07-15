@@ -98,7 +98,7 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
     ? baseTotal + 2 * gifted : undefined
 
   const integratedTotal = baseTotal !== undefined && integ !== undefined
-    ? baseTotal + 2 * integ : undefined
+    ? baseTotal + integ : undefined
 
   // Click away listener to close suggestions dropdown
   useEffect(() => {
@@ -328,7 +328,7 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
 
           {/* Tích hợp */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tích hợp (×2) — tuỳ chọn</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tích hợp (×1) — tuỳ chọn</p>
             <div className="flex items-center gap-3">
               <Label className="w-20 shrink-0 text-sm font-medium">Tích hợp</Label>
               <Input
@@ -430,7 +430,7 @@ export function RecommendationForm({ onSubmit, isLoading }: Props) {
                 )}
                 {integratedTotal !== undefined && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground font-medium">Tích hợp (max 50)</span>
+                    <span className="text-muted-foreground font-medium">Tích hợp (max 40)</span>
                     <span className="font-mono font-bold text-primary">{formatTotal(integratedTotal)}</span>
                   </div>
                 )}
